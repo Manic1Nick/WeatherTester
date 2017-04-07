@@ -14,7 +14,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <title>Weather tester page</title>
+    <title>Day tester page</title>
 
     <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet"/>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.12/css/dataTables.bootstrap.min.css" rel="stylesheet"/>
@@ -34,20 +34,56 @@
     <!-- /container -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
     <script src="${contextPath}/resources/js/bootstrap.min.js"></script>
+
+    <style>
+        a {
+            text-decoration: none;
+            display: inline-block;
+            padding: 8px 16px;
+        }
+
+        a:hover {
+            background-color: #ddd;
+            color: black;
+        }
+
+        .previous {
+            background-color: #f1f1f1;
+            color: black;
+        }
+
+        .next {
+            background-color: #f1f1f1;
+            color: black;
+        }
+
+        .round {
+            border-radius: 50%;
+        }
+    </style>
 </head>
 <body>
 <div class="container">
 
     <p>
-        <a href="${contextPath}/welcome" onclick="updateForecasts()">Return to main menu</a>
+        <a href="${contextPath}/welcome">Return to main menu</a>
     </p>
 
-    <h3><a href="#" onclick="changeDay('${date}','-1')"><<< previous </a> Date: ${date} <a href="#" onclick="changeDay('${date}','1')"> next >>></a></h3>
+    <h3>
+        <a href="#" onclick="changeDay('${date}','-1')" class="previous round"
+           data-toggle="tooltip" title="Previous date">&laquo;</a>
+            Analysis on date: ${date}
+        <a href="#" onclick="changeDay('${date}','1')" class="next round"
+           data-toggle="tooltip" title="Next date">&raquo;</a>
+    </h3>
 
     <div class="col-md-6">
 
         <c:forEach items="${listAvTester}" var="average" varStatus="loop">
-            <h2 id="flip${loop.index}">${average.provider} (click for open)</h2>
+            <div id="flip${loop.index}">
+                <img src="${contextPath}/resources/images/${average.provider.rowLogo}"
+                     data-toggle="tooltip" title="Click for open"/><a href="#">open</a>
+            </div>
             <p>Average mistake for date: ${average.valueDay} %</p>
             <p>Total average mistake: ${average.valueTotal} % for the ${average.valueDays} days</p>
 
@@ -74,7 +110,6 @@
                     </tbody>
                 </table>
             </div>
-
         </c:forEach>
 
     </div>

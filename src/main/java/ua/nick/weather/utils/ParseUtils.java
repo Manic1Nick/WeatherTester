@@ -2,11 +2,11 @@ package ua.nick.weather.utils;
 
 import ua.nick.weather.model.Forecast;
 import ua.nick.weather.model.Provider;
-import ua.nick.weather.model.foreca.Cc;
-import ua.nick.weather.model.foreca.Fcd;
-import ua.nick.weather.model.openWeather.OpenWeatherActual;
-import ua.nick.weather.model.wunderground.wActual.WundergroundActual;
-import ua.nick.weather.model.wunderground.wForecast.Forecastday_;
+import ua.nick.weather.modelWeather.foreca.Cc;
+import ua.nick.weather.modelWeather.foreca.Fcd;
+import ua.nick.weather.modelWeather.openWeather.OpenWeatherActual;
+import ua.nick.weather.modelWeather.wunderground.wActual.WundergroundActual;
+import ua.nick.weather.modelWeather.wunderground.wForecast.Forecastday_;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -20,7 +20,7 @@ public class ParseUtils {
     }
 
     //OPEN WEATHER
-    public Forecast makeForecastFromOpenWeather(ua.nick.weather.model.openWeather.List list) {
+    public Forecast makeForecastFromOpenWeather(ua.nick.weather.modelWeather.openWeather.List list) {
 
         Forecast forecast = new Forecast(Provider.OPENWEATHER, false);
 

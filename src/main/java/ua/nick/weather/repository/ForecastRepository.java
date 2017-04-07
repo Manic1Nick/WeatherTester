@@ -14,7 +14,7 @@ public interface ForecastRepository extends JpaRepository<Forecast, Long> {
     List<Forecast> findByProviderAndActual(Provider provider, boolean actual);
     Forecast findByIdAndProvider(Long id, Provider provider);
     List<Forecast> findByDateAndProvider(String date, Provider provider);
-    Forecast findByDateAndActual(String date, boolean actual);
+    List<Forecast> findByDateAndActual(String date, boolean actual);
     Forecast findByDateAndProviderAndActual(String date, Provider provider, boolean actual);
     List<Forecast> findByDateAndProviderAndActual(String date, Provider provider, boolean actual, Pageable pageable);
 }

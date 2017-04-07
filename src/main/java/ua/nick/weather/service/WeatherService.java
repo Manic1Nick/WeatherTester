@@ -3,6 +3,8 @@ package ua.nick.weather.service;
 import ua.nick.weather.exception.ForecastNotFoundInDBException;
 import ua.nick.weather.exception.NoDataFromProviderException;
 import ua.nick.weather.model.*;
+import ua.nick.weather.modelTester.TesterAverage;
+import ua.nick.weather.modelTester.TesterItem;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -20,27 +22,17 @@ public interface WeatherService {
     List<Forecast> getAllNewActuals() throws IOException, URISyntaxException, ParseException;
     Forecast getActualWeatherFromProvider(Provider provider) throws URISyntaxException, IOException, ParseException;
     List<Forecast> getAllForecastsFromProvider(Provider provider);
-    List<Forecast> getAllForecastsFromProviderAndActual(Provider provider, boolean actual);
-    Map<Provider, List<Forecast>> createMapForecastsByProviders(boolean actual);
-
-    //Map<String, Map<String, String>> createDayMapForecastsByItems(String date) throws ForecastNotFoundInDBException;
-    //Forecast getForecastFromDBByDateProviderActual(String date, Provider provider, boolean actual) throws ForecastNotFoundInDBException;
-
     List<List<Long>> getListForecastsAndActualsIds(String date) throws ForecastNotFoundInDBException;
-    Map<String, Map<Tester, String>> createDayMapForecastsByIds(String separatedByCommaIds);
-    Map<Provider, Map<String, Map<Tester, String>>> createDayMapForecastsByProviders(String separatedByCommaIds);
 
     void saveNewDiff(Diff diff);
-    Diff createAndSaveNewDiff(Forecast forecast, Forecast actual);
-    Diff getDiffByDateAndProvider(String date, Provider provider);
-    void saveNewAverageDiff(AverageDiff diff);
     AverageDiff getAverageDiff(Provider provider);
     List<AverageDiff> getAllAverageDiffs();
     List<Integer> createListOfAverageItems();
-
     List<TesterAverage> createListAverageTesters(String date);
     Map<Provider, List<TesterItem>> createMapItemTesters(String ids);
     List<Diff> createListDiffsForPeriod(LocalDate from, LocalDate to);
+    Map<Provider, List<Forecast>> createMapProviderForecastsForPeriod(LocalDate from, LocalDate to);
+    List<String> createListStringDatesOfPeriod(LocalDate from, LocalDate to);
 
     //admin
     List<AverageDiff> updateAverageDiffForAllDays();

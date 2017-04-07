@@ -6,13 +6,15 @@ import org.springframework.stereotype.Service;
 import ua.nick.weather.exception.ForecastNotFoundInDBException;
 import ua.nick.weather.exception.NoDataFromProviderException;
 import ua.nick.weather.model.*;
+import ua.nick.weather.modelTester.TesterAverage;
+import ua.nick.weather.modelTester.TesterItem;
 import ua.nick.weather.repository.AverageDiffRepository;
 import ua.nick.weather.repository.DiffRepository;
 import ua.nick.weather.repository.ForecastRepository;
 import ua.nick.weather.utils.NetUtils;
 import ua.nick.weather.utils.ParseUtils;
-import ua.nick.weather.weatherFabric.ActualWeatherFactory;
-import ua.nick.weather.weatherFabric.ForecastFactory;
+import ua.nick.weather.weatherFactory.ActualWeatherFactory;
+import ua.nick.weather.weatherFactory.ForecastFactory;
 
 import java.io.IOException;
 import java.net.URI;
@@ -52,7 +54,7 @@ public class WeatherServiceImpl implements WeatherService {
             throws IOException, URISyntaxException, ParseException, NoDataFromProviderException {
         List<List<Forecast>> allForecasts = new ArrayList<>();
 
-        for (Provider provider : Arrays.asList(Provider.values())) {
+        for (Provider provider : Provider.values()) {
 
             if (needUpdateForecasts(provider)) {
                 try {
@@ -85,11 +87,7 @@ public class WeatherServiceImpl implements WeatherService {
     public List<Forecast> getNewForecastsFromProvider(Provider provider)
             throws URISyntaxException, IOException, ParseException, NoDataFromProviderException {
 
-        String link = Constants.FORECASTS_PROVIDERS_MAP.get(provider);
-        if (link.isEmpty())
-            return null;
-
-        URI uri = new URI(link);
+        URI uri = new URI(provider.getLinkForecast());
         URL url = uri.toURL();
 
         String json;
@@ -124,7 +122,7 @@ public class WeatherServiceImpl implements WeatherService {
             throws IOException, URISyntaxException, ParseException {
         List<Forecast> actuals = new ArrayList<>();
 
-        for (Provider provider : Arrays.asList(Provider.values())) {
+        for (Provider provider : Provider.values()) {
 
             if (needUpdateActuals(provider)) {
                 Forecast actual = getActualWeatherFromProvider(provider);
@@ -135,6 +133,8 @@ public class WeatherServiceImpl implements WeatherService {
                 createAndSaveNewDiff(actual);
             }
         }
+        //actuals = addOtherTodayActualsToList(actuals);
+
         return actuals;
     }
 
@@ -142,11 +142,7 @@ public class WeatherServiceImpl implements WeatherService {
     public Forecast getActualWeatherFromProvider(Provider provider)
             throws URISyntaxException, IOException, ParseException {
 
-        String link = Constants.ACTUALS_PROVIDERS_MAP.get(provider);
-        if (link.isEmpty())
-            return null;
-
-        URI uri = new URI(link);
+        URI uri = new URI(provider.getLinkActual());
         URL url = uri.toURL();
 
         String json = NetUtils.urlToString(url);
@@ -157,68 +153,6 @@ public class WeatherServiceImpl implements WeatherService {
     @Override
     public List<Forecast> getAllForecastsFromProvider(Provider provider) {
         return forecastRepository.findByProvider(provider);
-    }
-
-    @Override
-    public List<Forecast> getAllForecastsFromProviderAndActual(Provider provider, boolean actual) {
-        return forecastRepository.findByProviderAndActual(provider, actual);
-    }
-
-    @Override
-    public Map<Provider, List<Forecast>> createMapForecastsByProviders(boolean actual) {
-        Map<Provider, List<Forecast>> map = new HashMap<>();
-
-        for (Provider provider : Arrays.asList(Provider.values())) {
-            List<Forecast> list = getAllForecastsFromProviderAndActual(provider, actual);
-            if (list != null) {
-                list.sort((o1, o2) -> Long.compare(o1.getTimeUnix(), o2.getTimeUnix()));
-                map.put(provider, list);
-            }
-        }
-        return map;
-    }
-
-    @Override
-    public Map<Provider, Map<String, Map<Tester, String>>> createDayMapForecastsByProviders(
-            String separatedByCommaIds) {
-
-        Map<Provider, Map<String, Map<Tester, String>>> mapProviders = new HashMap<>();
-        //provider -> {item -> {tester -> value}}
-
-        String[] pairs = separatedByCommaIds.split(";");
-        for (String pair : pairs) {
-            Long id = Long.parseLong(pair.split(",")[0]);
-            Provider provider = forecastRepository.findById(id).getProvider();
-            mapProviders.put(provider, createDayMapForecastsByIds(pair));
-        }
-        return mapProviders;
-    }
-
-    @Override
-    public Map<String, Map<Tester, String>> createDayMapForecastsByIds(String separatedByCommaIds) {
-        Map<String, Map<Tester, String>> mapItems = new HashMap<>(); //item -> {tester -> value}
-
-        //todo for each pair ids from list providers (ids=1,2;3,4;5,6;...)
-        String[] ids = separatedByCommaIds.split(",");
-
-        Forecast forecast = forecastRepository.findById(Long.parseLong(ids[0]));
-        Forecast actual = forecastRepository.findById(Long.parseLong(ids[1]));
-
-        Diff diff = diffRepository.findByDateAndProvider(forecast.getDate(), forecast.getProvider());
-        if (diff == null)
-            diff = createAndSaveNewDiff(forecast, actual);
-
-        for (String item : Constants.FIELDS_AND_RANGES_MAP.keySet()) {
-            SortedMap<Tester, String> mapForecasts = new TreeMap<>();
-            item = item.toLowerCase();
-
-            mapForecasts.put(Tester.FORECAST, forecast.determineFieldByString(item));
-            mapForecasts.put(Tester.ACTUAL, actual.determineFieldByString(item));
-            mapForecasts.put(Tester.DIFFERENT, diff.determineFieldByString(item));
-
-            mapItems.put(item, mapForecasts);
-        }
-        return mapItems;
     }
 
     @Override
@@ -248,26 +182,8 @@ public class WeatherServiceImpl implements WeatherService {
     }
 
     @Override
-    public Diff createAndSaveNewDiff(Forecast forecast, Forecast actual) {
-        Diff diff = new Diff(forecast, actual);
-        saveNewDiff(diff);
-
-        return diff;
-    }
-
-    @Override
-    public Diff getDiffByDateAndProvider(String date, Provider provider) {
-        return diffRepository.findByDateAndProvider(date, provider);
-    }
-
-    @Override
     public void saveNewDiff(Diff diff) {
         diffRepository.save(diff);
-    }
-
-    @Override
-    public void saveNewAverageDiff(AverageDiff diff) {
-        averageDiffRepository.save(diff);
     }
 
     @Override
@@ -277,12 +193,7 @@ public class WeatherServiceImpl implements WeatherService {
 
     @Override
     public List<AverageDiff> getAllAverageDiffs() {
-
-        List<AverageDiff> diffs = averageDiffRepository.findAll();
-        diffs.sort((AverageDiff diff1, AverageDiff diff2) ->
-                diff1.getProvider().compareTo(diff2.getProvider()));
-
-        return diffs;
+        return averageDiffRepository.findAll();
     }
 
     @Override
@@ -296,7 +207,7 @@ public class WeatherServiceImpl implements WeatherService {
 
             if (listDiffs != null && listDiffs.size() > 0)
                 for (Diff diff : listDiffs)
-                    allAverageDiff.add(addDiffToAverage(diff));
+                    allAverageDiff.add(createAverageDiff(diff));
         }
         return allAverageDiff;
     }
@@ -333,28 +244,7 @@ public class WeatherServiceImpl implements WeatherService {
         return mapItemTesters;
     }
 
-    private List<TesterItem> createDayListItemTestersByIds(Long idForecast, Long idActual) {
-        List<TesterItem> itemTesters = new ArrayList<>(); //size = fields value in forecast
-
-        Forecast forecast = forecastRepository.findById(idForecast);
-        Forecast actual = forecastRepository.findById(idActual);
-        Diff diff = diffRepository.findByDateAndProvider(actual.getDate(), actual.getProvider());
-
-        for (String name : Constants.FIELDS_AND_RANGES_MAP.keySet())
-            itemTesters.add(
-                    new TesterItem(
-                            name,
-                            actual.getProvider(),
-                            actual.getDate(),
-                            forecast.determineFieldByString(name),
-                            actual.determineFieldByString(name),
-                            diff.determineFieldByString(name)
-                    )
-            );
-
-        return itemTesters;
-    }
-
+    //todo usable or delete
     @Override
     public List<Integer> createListOfAverageItems() {
         List<Integer> averageItems = new ArrayList<>();
@@ -388,12 +278,62 @@ public class WeatherServiceImpl implements WeatherService {
     public List<Diff> createListDiffsForPeriod(LocalDate from, LocalDate to) {
         List<Diff> diffs = new ArrayList<>();
 
-        List<LocalDate> datesOfWeek = createListDatesOfPeriod(from, to);
+        List<LocalDate> datesOfPeriod = createListDatesOfPeriod(from, to);
 
-        for (LocalDate localDate : datesOfWeek)
+        for (LocalDate localDate : datesOfPeriod)
             diffs.add(findBestDiffForDate(localDate));
 
         return diffs;
+    }
+
+    @Override
+    public Map<Provider, List<Forecast>> createMapProviderForecastsForPeriod(LocalDate from, LocalDate to) {
+        Map<Provider, List<Forecast>> mapForecasts =new HashMap<>();
+
+        for (Provider provider : Provider.values())
+            mapForecasts.put(provider, getForecastsByProviderForPeriod(provider, from, to));
+
+        return mapForecasts;
+    }
+
+    @Override
+    public List<String> createListStringDatesOfPeriod(LocalDate from, LocalDate to) {
+        List<String> dates = new ArrayList<>();
+
+        int end = to.getDayOfYear() - from.getDayOfYear() + 1;
+        DateTimeFormatter yyyyMMdd = DateTimeFormatter.ofPattern("yyyy/MM/dd");
+
+        for (int i = 0; i < end; i++)
+            dates.add(from.plusDays(i).format(yyyyMMdd));
+
+        return dates;
+    }
+
+    private List<Forecast> addOtherTodayActualsToList(List<Forecast> actuals) {
+
+        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
+
+        List<Forecast> allActuals = forecastRepository.findByDateAndActual(today, true);
+        for (Forecast forecast : allActuals)
+            if (!actuals.contains(forecast))
+                actuals.add(forecast);
+
+        return actuals;
+    }
+
+    private List<Forecast> getForecastsByProviderForPeriod(Provider provider, LocalDate from, LocalDate to) {
+        List<Forecast> forecasts = new ArrayList<>();
+
+        List<String> datesOfPeriod = createListStringDatesOfPeriod(from, to);
+
+        for (String date : datesOfPeriod) {
+            Forecast current = forecastRepository.findByDateAndProviderAndActual(date, provider, false);
+            if (current != null)
+                forecasts.add(current);
+        }
+        forecasts.sort((forecast1, forecast2) -> forecast1.getId().intValue() - forecast2.getId().intValue());
+
+        return forecasts;
     }
 
     private Diff findBestDiffForDate(LocalDate localDate) {
@@ -439,6 +379,28 @@ public class WeatherServiceImpl implements WeatherService {
         return localDates;
     }
 
+    private List<TesterItem> createDayListItemTestersByIds(Long idForecast, Long idActual) {
+        List<TesterItem> itemTesters = new ArrayList<>(); //size = fields value in forecast
+
+        Forecast forecast = forecastRepository.findById(idForecast);
+        Forecast actual = forecastRepository.findById(idActual);
+        Diff diff = diffRepository.findByDateAndProvider(actual.getDate(), actual.getProvider());
+
+        for (String name : Constants.FIELDS_AND_RANGES_MAP.keySet())
+            itemTesters.add(
+                    new TesterItem(
+                            name,
+                            actual.getProvider(),
+                            actual.getDate(),
+                            forecast.determineFieldByString(name),
+                            actual.determineFieldByString(name),
+                            diff.determineFieldByString(name)
+                    )
+            );
+
+        return itemTesters;
+    }
+
     private Diff createAndSaveNewDiff(Forecast actual) {
         Diff diff = checkForecastInDB(actual) ?
                 calculateDiff(actual) :
@@ -447,7 +409,7 @@ public class WeatherServiceImpl implements WeatherService {
         if (diff != null && !checkDiffInDB(diff)) {
             diff.setInclInAverageDiff(true);
             saveNewDiff(diff);
-            addDiffToAverage(diff);
+            createAverageDiff(diff);
         }
         return diff;
     }
@@ -461,25 +423,13 @@ public class WeatherServiceImpl implements WeatherService {
         return new Diff(forecast, actual);
     }
 
-    private AverageDiff addDiffToAverage(Diff diff) {
+    private AverageDiff createAverageDiff(Diff diff) {
         AverageDiff averageDiff = averageDiffRepository.findByProvider(diff.getProvider());
 
-        if (averageDiff == null) {
+        if (averageDiff == null)
             averageDiff = new AverageDiff(diff);
-
-        } else if (averageDiff.getDays() == 0 && averageDiff.getValue() == 0) {
-            averageDiff.setDays(1);
-            averageDiff.setValue(diff.getAverageDayDiff());
-
-        } else {
-            double value = averageDiff.getValue();
-            int days = averageDiff.getDays();
-
-            value = (days * value + diff.getAverageDayDiff()) / ++days;
-            value = (double) (Math.round(value * 10)) / 10;//round #.##
-            averageDiff.setValue(value);
-            averageDiff.setDays(days);
-        }
+        else
+            averageDiff = averageDiff.addDiff(diff);
 
         return averageDiffRepository.save(averageDiff);
     }
@@ -572,7 +522,7 @@ public class WeatherServiceImpl implements WeatherService {
     }
 
     private boolean needUpdateForecasts(Provider provider) {
-        int maxDays = Constants.MAX_DAYS_FOR_FORECASTS_MAP.get(provider);
+        int maxDays = provider.getMaxDaysForecast();
 
         for (int i = 1; i < maxDays; i++) {
             long addingDays = i * 86400000;
@@ -592,6 +542,84 @@ public class WeatherServiceImpl implements WeatherService {
         return forecastRepository.findByDateAndProviderAndActual(today, provider, true) == null;
     }
 
+    /*@Override
+    public Map<Provider, List<Forecast>> createMapForecastsByProviders(boolean actual) {
+        Map<Provider, List<Forecast>> map = new HashMap<>();
+
+        for (Provider provider : Arrays.asList(Provider.values())) {
+            List<Forecast> list = getAllForecastsFromProviderAndActual(provider, actual);
+            if (list != null) {
+                list.sort((o1, o2) -> Long.compare(o1.getTimeUnix(), o2.getTimeUnix()));
+                map.put(provider, list);
+            }
+        }
+        return map;
+    }
+
+    @Override
+    public Map<Provider, Map<String, Map<Tester, String>>> createDayMapForecastsByProviders(
+            String separatedByCommaIds) {
+
+        Map<Provider, Map<String, Map<Tester, String>>> mapProviders = new HashMap<>();
+        //provider -> {item -> {tester -> value}}
+
+        String[] pairs = separatedByCommaIds.split(";");
+        for (String pair : pairs) {
+            Long id = Long.parseLong(pair.split(",")[0]);
+            Provider provider = forecastRepository.findById(id).getProvider();
+            mapProviders.put(provider, createDayMapForecastsByIds(pair));
+        }
+        return mapProviders;
+    }
+
+    @Override
+    public Diff getDiffByDateAndProvider(String date, Provider provider) {
+        return diffRepository.findByDateAndProvider(date, provider);
+    }
+
+    @Override
+    public void saveNewAverageDiff(AverageDiff diff) {
+        averageDiffRepository.save(diff);
+    }
+
+    @Override
+    public List<Forecast> getAllForecastsFromProviderAndActual(Provider provider, boolean actual) {
+        return forecastRepository.findByProviderAndActual(provider, actual);
+    }
+
+    @Override
+    public Map<String, Map<Tester, String>> createDayMapForecastsByIds(String separatedByCommaIds) {
+        Map<String, Map<Tester, String>> mapItems = new HashMap<>(); //item -> {tester -> value}
+
+        String[] ids = separatedByCommaIds.split(",");
+
+        Forecast forecast = forecastRepository.findById(Long.parseLong(ids[0]));
+        Forecast actual = forecastRepository.findById(Long.parseLong(ids[1]));
+
+        Diff diff = diffRepository.findByDateAndProvider(forecast.getDate(), forecast.getProvider());
+        if (diff == null)
+            diff = createAndSaveNewDiff(forecast, actual);
+
+        for (String item : Constants.FIELDS_AND_RANGES_MAP.keySet()) {
+            SortedMap<Tester, String> mapForecasts = new TreeMap<>();
+            item = item.toLowerCase();
+
+            mapForecasts.put(Tester.FORECAST, forecast.determineFieldByString(item));
+            mapForecasts.put(Tester.ACTUAL, actual.determineFieldByString(item));
+            mapForecasts.put(Tester.DIFFERENT, diff.determineFieldByString(item));
+
+            mapItems.put(item, mapForecasts);
+        }
+        return mapItems;
+    }
+
+    @Override
+    public Diff createAndSaveNewDiff(Forecast forecast, Forecast actual) {
+        Diff diff = new Diff(forecast, actual);
+        saveNewDiff(diff);
+
+        return diff;
+    }*/
 
     //test
     public static void main(String[] args) {
@@ -600,7 +628,7 @@ public class WeatherServiceImpl implements WeatherService {
         Provider provider = Provider.FORECA;
 
         try {
-            URI uri = new URI(Constants.FORECASTS_PROVIDERS_MAP.get(provider));
+            URI uri = new URI(provider.getLinkForecast());
             URL url = uri.toURL();
             String json = NetUtils.urlToString(url);
             System.out.println("FORECAST: " + json);
@@ -609,7 +637,7 @@ public class WeatherServiceImpl implements WeatherService {
             System.out.println("FORECASTS:");
             forecasts.stream().forEach(System.out::println);*/
 
-            uri = new URI(Constants.ACTUALS_PROVIDERS_MAP.get(provider));
+            uri = new URI(provider.getLinkActual());
             url = uri.toURL();
             json = NetUtils.urlToString(url);
             System.out.println("CURRENT: " + json);

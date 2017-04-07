@@ -7,6 +7,8 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import ua.nick.weather.model.*;
+import ua.nick.weather.modelTester.TesterAverage;
+import ua.nick.weather.modelTester.TesterItem;
 import ua.nick.weather.service.WeatherService;
 
 import javax.servlet.http.HttpServletRequest;
@@ -31,39 +33,20 @@ public class ApplicationController {
         List<Diff> diffs = weatherService.createListDiffsForPeriod(today.minusDays(7), today);
         model.addAttribute("listDiffs", diffs);
 
-        Map<Provider, Integer> map = new HashMap<>();
-        List<Provider> listProviders = Arrays.asList(Provider.values());
-        for (int i = 0; i < listProviders.size(); i++)
-            map.put(listProviders.get(i), i);
-        model.addAttribute("mapProviders", map);
+        Map<Provider, List<Forecast>> mapForecasts =
+                weatherService.createMapProviderForecastsForPeriod(today.plusDays(1), today.plusDays(7));
+        model.addAttribute("mapForecasts", mapForecasts);
+
+        List<String> dates = weatherService.createListStringDatesOfPeriod(today.plusDays(1), today.plusDays(7));
+        model.addAttribute("dates", dates);
 
         List<AverageDiff> averages = weatherService.getAllAverageDiffs();
+        averages.sort((diff1, diff2) -> (int) diff1.getValue() - (int) diff2.getValue());
         model.addAttribute("listAverages", averages);
 
         model.addAttribute("message", message);
 
         return "welcome";
-    }
-
-    @RequestMapping(value = {"/welcome2"}, method = RequestMethod.GET)
-    public String welcome2(@ModelAttribute("message") String message, Model model) {
-
-        LocalDate today = LocalDate.now();
-        List<Diff> diffs = weatherService.createListDiffsForPeriod(today.minusDays(7), today);
-        model.addAttribute("listDiffs", diffs);
-
-        Map<Provider, Integer> map = new HashMap<>();
-        List<Provider> listProviders = Arrays.asList(Provider.values());
-        for (int i = 0; i < listProviders.size(); i++)
-            map.put(listProviders.get(i), i);
-        model.addAttribute("mapProviders", map);
-
-        List<AverageDiff> averages = weatherService.getAllAverageDiffs();
-        model.addAttribute("listAverages", averages);
-
-        model.addAttribute("message", message);
-
-        return "welcome2";
     }
 
     @RequestMapping(value = {"/forecasts/get/new"}, method = RequestMethod.GET)
@@ -152,6 +135,7 @@ public class ApplicationController {
         resp.getWriter().print(createMessageAboutUpdateAverageDiff(allAverageDiff));
     }
 
+    //todo usable or delete
     @RequestMapping(value = {"/forecasts/get/all"}, method = RequestMethod.GET)
     public String getTotalAnalysis(@ModelAttribute("message") String message, Model model) {
 
@@ -211,7 +195,7 @@ public class ApplicationController {
             message = "New " + total + " forecast(s) were added to database:" + countedByProviders;
 
         } else {
-            message = "All forecasts from providers for requested dates are already exist in the database. " +
+            message = "There is no need to update forecasts from providers for this date. " +
                     "</br>Try tomorrow";
         }
         return message;
