@@ -99,7 +99,7 @@ public class WeatherServiceImpl implements WeatherService {
         }
 
         //foreca has 1 json for all forecasts and actual (and has limit )
-        if (provider == Provider.FORECA)
+        if (provider == Provider.FORECA && needUpdateActuals(Provider.FORECA))
             return createListForecastsAndActualFromForeca(json);
 
         return forecastFactory.createListForecastModelsFromJson(provider, json);

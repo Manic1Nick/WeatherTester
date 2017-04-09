@@ -455,6 +455,7 @@
                     ],
                     backgroundColor : "${map.key.color}",
                     lineColor : "${map.key.color}",
+                    alphaArea : "0.6",
                     text:'${map.key.name}'
                 }<c:if test="${!status.last}">,</c:if>
             </c:forEach>
