@@ -27,10 +27,19 @@ public enum Provider {
             "small_foreca_logo.png",
             "row_foreca_logo.png",
             "#29bfe4",
-            10);
+            10),
+
+    DARK_SKY(
+            "https://api.darksky.net/forecast/030645a49019b80fcc061e3505f1b905/50.4450968,30.5053821",
+            "https://api.darksky.net/forecast/030645a49019b80fcc061e3505f1b905/50.4450968,30.5053821",
+            "small_darksky_logo.png",
+            "row_darksky_logo.png",
+            "#29e45c",
+            8);
+
     //APIXU();
 
-    //next colors: "#29e45c", "#e43e29", "#f19729", "#29f1d2"
+    //next colors: "#e43e29", "#f19729", "#29f1d2"
 
     private String name = this.name();
     private int number = this.ordinal();

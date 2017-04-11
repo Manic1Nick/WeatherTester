@@ -4,6 +4,8 @@ import com.google.gson.Gson;
 import org.springframework.stereotype.Component;
 import ua.nick.weather.model.Forecast;
 import ua.nick.weather.model.Provider;
+import ua.nick.weather.modelWeather.darkSky.DarkSky;
+import ua.nick.weather.modelWeather.darkSky.Datum_;
 import ua.nick.weather.modelWeather.foreca.Fcd;
 import ua.nick.weather.modelWeather.foreca.ForecaAll;
 import ua.nick.weather.modelWeather.openWeather.OpenWeatherForecast;
@@ -58,6 +60,16 @@ public class ForecastFactory {
             for (Fcd fcd : fcdList) {
                 Forecast forecast = parseUtils.makeForecastFromForeca(fcd);
                 forecast.setDaysBeforeActual(fcdList.indexOf(fcd) + 1);
+                forecasts.add(forecast);
+            }
+
+        } else if (provider == Provider.DARK_SKY) {
+            DarkSky darkSky = gson.fromJson(json, DarkSky.class);
+
+            List<Datum_> datumList = darkSky.getDaily().getData();
+            for (Datum_ datum : datumList) {
+                Forecast forecast = parseUtils.makeForecastFromDarkSky(datum);
+                forecast.setDaysBeforeActual(datumList.indexOf(datum) + 1);
                 forecasts.add(forecast);
             }
         }

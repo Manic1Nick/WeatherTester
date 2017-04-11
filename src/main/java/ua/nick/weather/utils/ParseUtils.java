@@ -2,6 +2,8 @@ package ua.nick.weather.utils;
 
 import ua.nick.weather.model.Forecast;
 import ua.nick.weather.model.Provider;
+import ua.nick.weather.modelWeather.darkSky.Currently;
+import ua.nick.weather.modelWeather.darkSky.Datum_;
 import ua.nick.weather.modelWeather.foreca.Cc;
 import ua.nick.weather.modelWeather.foreca.Fcd;
 import ua.nick.weather.modelWeather.openWeather.OpenWeatherActual;
@@ -102,7 +104,7 @@ public class ParseUtils {
     }
 
 
-    //OPEN FORECA
+    //FORECA
     public Forecast makeForecastFromForeca(Fcd fcd) throws ParseException {
 
         Forecast forecast = new Forecast(Provider.FORECA, false);
@@ -139,6 +141,47 @@ public class ParseUtils {
         actual.setClouds(cc.getRh());
         actual.setWindSpeed(cc.getWs());
         actual.setDescription(createDescriptionForForeca(cc.getS())); //1 letter + 3 numbers
+
+        return actual;
+    }
+
+    //DARK_SKY
+    public Forecast makeForecastFromDarkSky(Datum_ datum) throws ParseException {
+
+        Forecast forecast = new Forecast(Provider.DARK_SKY, false);
+
+        Long epoch = datum.getTime().longValue();
+        String date = new java.text.SimpleDateFormat("yyyy/MM/dd")
+                .format(new java.util.Date(epoch * 1000));
+
+        forecast.setTimeUnix(epoch / 1000);
+        forecast.setDate(date);
+        forecast.setTempMin((int) Math.round((datum.getTemperatureMin() - 32.0) * (5.0/9.0))); //[°C] = ([°F] − 32) ×  5⁄9
+        forecast.setTempMax((int) Math.round((datum.getTemperatureMax() - 32.0) * (5.0/9.0)));
+        forecast.setPressure((int) Math.round(datum.getPressure()));
+        forecast.setClouds((int) Math.round(datum.getCloudCover() * 100));
+        forecast.setWindSpeed((int) Math.round(datum.getWindSpeed()));
+        forecast.setDescription(datum.getSummary());
+
+        return forecast;
+    }
+
+    public Forecast makeActualWeatherFromDarkSky(Currently currently) throws ParseException {
+
+        Forecast actual = new Forecast(Provider.DARK_SKY, true);
+
+        Long epoch = currently.getTime().longValue();
+        String date = new java.text.SimpleDateFormat("yyyy/MM/dd")
+                .format(new java.util.Date(epoch * 1000));
+
+        actual.setTimeUnix(epoch / 1000);
+        actual.setDate(date);
+        actual.setTempMin((int) Math.round((currently.getTemperature() - 32.0) * (5.0/9.0)));
+        actual.setTempMax((int) Math.round((currently.getTemperature() - 32.0) * (5.0/9.0)));
+        actual.setPressure((int) Math.round(currently.getPressure()));
+        actual.setClouds((int) Math.round(currently.getCloudCover() * 100));
+        actual.setWindSpeed((int) Math.round(currently.getWindSpeed()));
+        actual.setDescription(currently.getSummary());
 
         return actual;
     }

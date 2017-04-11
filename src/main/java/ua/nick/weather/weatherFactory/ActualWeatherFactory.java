@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import org.springframework.stereotype.Component;
 import ua.nick.weather.model.Forecast;
 import ua.nick.weather.model.Provider;
+import ua.nick.weather.modelWeather.darkSky.DarkSky;
 import ua.nick.weather.modelWeather.foreca.ForecaAll;
 import ua.nick.weather.modelWeather.openWeather.OpenWeatherActual;
 import ua.nick.weather.modelWeather.wunderground.wActual.WundergroundActual;
@@ -40,6 +41,11 @@ public class ActualWeatherFactory {
             ForecaAll forecaAll = gson.fromJson(json, ForecaAll.class);
 
             actual = parseUtils.makeActualWeatherFromForeca(forecaAll.getCc());
+
+        } else if (provider == Provider.DARK_SKY) {
+            DarkSky darkSky = gson.fromJson(json, DarkSky.class);
+
+            actual = parseUtils.makeActualWeatherFromDarkSky(darkSky.getCurrently());
         }
 
         return actual;

@@ -99,7 +99,7 @@ public class WeatherServiceImpl implements WeatherService {
         }
 
         //foreca has 1 json for all forecasts and actual (and has limit )
-        if (provider == Provider.FORECA && needUpdateActuals(Provider.FORECA))
+        if (provider == Provider.FORECA)
             return createListForecastsAndActualFromForeca(json);
 
         return forecastFactory.createListForecastModelsFromJson(provider, json);
@@ -107,12 +107,15 @@ public class WeatherServiceImpl implements WeatherService {
 
     private List<Forecast> createListForecastsAndActualFromForeca(String json)
             throws ParseException, NoDataFromProviderException {
+
         List<Forecast> list = forecastFactory.createListForecastModelsFromJson(Provider.FORECA, json);
         list = saveListNewForecasts(list);
 
-        Forecast actual = actualFactory.createActualModelFromJson(Provider.FORECA, json);;
-        saveNewForecast(actual);
-        createAndSaveNewDiff(actual);
+        if (needUpdateActuals(Provider.FORECA)) {
+            Forecast actual = actualFactory.createActualModelFromJson(Provider.FORECA, json);;
+            saveNewForecast(actual);
+            createAndSaveNewDiff(actual);
+        }
 
         return list;
     }
@@ -217,15 +220,15 @@ public class WeatherServiceImpl implements WeatherService {
         List<TesterAverage> averageTesters = new ArrayList<>();
 
         for (Provider provider : Arrays.asList(Provider.values())) {
-            Diff diff = diffRepository.findByDateAndProvider(date, provider);
-            AverageDiff averageDiff = averageDiffRepository.findByProvider(provider);
+            TesterAverage testerAverage = createTesterAverage(date, provider);
 
-            TesterAverage testerAverage = new TesterAverage(
-                    provider, date, String.valueOf(diff.getAverageDayDiff()),
-                    String.valueOf(averageDiff.getValue()), String.valueOf(averageDiff.getDays()));
-
-            averageTesters.add(testerAverage);
+            if (testerAverage != null)
+                averageTesters.add(testerAverage);
         }
+        averageTesters.sort((avTester1, avTester2) ->
+                (int) (Math.round(Double.parseDouble(avTester1.getValueDay())) -
+                        Math.round(Double.parseDouble(avTester2.getValueDay()))));
+
         return averageTesters;
     }
 
@@ -309,6 +312,23 @@ public class WeatherServiceImpl implements WeatherService {
         return dates;
     }
 
+
+    private TesterAverage createTesterAverage(String date, Provider provider) {
+        TesterAverage testerAverage = null;
+
+        Diff diff = diffRepository.findByDateAndProvider(date, provider);
+
+        if (diff != null) {
+            AverageDiff averageDiff = averageDiffRepository.findByProvider(provider);
+
+            testerAverage = new TesterAverage(
+                    provider, date, String.valueOf(diff.getAverageDayDiff()),
+                    String.valueOf(averageDiff.getValue()), String.valueOf(averageDiff.getDays()));
+        }
+
+        return testerAverage;
+    }
+
     private List<Forecast> addOtherTodayActualsToList(List<Forecast> actuals) {
 
         String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
@@ -337,16 +357,12 @@ public class WeatherServiceImpl implements WeatherService {
     }
 
     private Diff findBestDiffForDate(LocalDate localDate) {
-        Diff bestDiff = null;
         String date = localDate.format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
 
-        for (Provider provider : Arrays.asList(Provider.values())) {
-            Diff current = diffRepository.findByDateAndProvider(date, provider);
+        List<Diff> currentDateDiffs = diffRepository.findByDate(date);
+        currentDateDiffs.sort((diff1, diff2) -> (int) (diff1.getAverageDayDiff() - diff2.getAverageDayDiff()));
 
-            bestDiff = bestDiff == null ? current :
-                    current.getAverageDayDiff() < bestDiff.getAverageDayDiff() ? current : bestDiff ;
-        }
-        return bestDiff;
+        return currentDateDiffs.size() > 0 ? currentDateDiffs.get(0) : null;
     }
 
     private List<LocalDate> createListDatesOfPeriod(LocalDate from, LocalDate to) {

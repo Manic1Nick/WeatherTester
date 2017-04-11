@@ -138,15 +138,11 @@
 
 <script>
     $(document).ready(function(){
-        $("#flip0").click(function(){
-            $("#table0").slideToggle("slow");
-        });
-        $("#flip1").click(function(){
-            $("#table1").slideToggle("slow");
-        });
-        $("#flip2").click(function(){
-            $("#table2").slideToggle("slow");
-        });
+        <c:forEach items="${listAvTester}" var="average" varStatus="loop">
+            $("#flip${loop.index}").click(function(){
+                $("#table${loop.index}").slideToggle("slow");
+            });
+        </c:forEach>
     });
 
     function changeDay(date, index) {

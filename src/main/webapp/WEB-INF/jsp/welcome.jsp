@@ -161,15 +161,12 @@
             $("#forecasts").slideToggle("slow");
         });
 
-        $("#flipDetails0").click(function(){
-            $("#details0").slideToggle("slow");
-        });
-        $("#flipDetails1").click(function(){
-            $("#details1").slideToggle("slow");
-        });
-        $("#flipDetails2").click(function(){
-            $("#details2").slideToggle("slow");
-        });
+
+        <c:forEach items="${listAverages}" var="avDiff" varStatus="loop">
+            $("#flipDetails${loop.index}").click(function(){
+                $("#details${loop.index}").slideToggle("slow");
+            });
+        </c:forEach>
     });
 
     function openModalWithUpdate(name, data) {
@@ -307,7 +304,7 @@
             }
         },
         "scale-y":{
-            /*"labels":["Last 7 days"],*/
+            "labels":["Select day"],
             "line-color":"none",
             "guide":{
                 "line-style":"solid",
