@@ -541,7 +541,7 @@ public class WeatherServiceImpl implements WeatherService {
         int maxDays = provider.getMaxDaysForecast();
 
         for (int i = 1; i < maxDays; i++) {
-            long addingDays = i * 86400000;
+            long addingDays = i * 86400000; //86400000 is 24 hours
             String testDate = new java.text.SimpleDateFormat("yyyy/MM/dd")
                     .format(System.currentTimeMillis() + addingDays);
 

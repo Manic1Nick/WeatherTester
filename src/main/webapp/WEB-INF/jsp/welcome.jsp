@@ -48,8 +48,14 @@
 
     <div id="menu" style="text-align:center;">
         <p>
-            <a href="#" onclick="updateForecasts()">Update forecasts</a>
-            <a href="#" onclick="updateActuals()">Update actual weather</a>
+            <a href="#" onclick="updateForecasts()"
+               data-toggle="tooltip" title="Click for updating all forecasts for the next days">
+                Update forecasts
+            </a>
+            <a href="#" onclick="updateActuals()"
+               data-toggle="tooltip" title="Click for updating today weather for all providers">
+                Update actual weather
+            </a>
         </p>
 
         <%--
@@ -64,9 +70,13 @@
 
     <div id="actions">
         <p>
-            <button id="flipLast7" type="button" class="btn">Last 7 days</button>
-            <button id="flipRating" type="button" class="btn">Rating mistakes</button>
-            <button id="flipNext7" type="button" class="btn">Next 7 days</button>
+            <button id="flipLast7" type="button" class="btn"
+                    data-toggle="tooltip" title="Analysis last 7 days">Last 7 days
+            </button>
+            <button id="flipRating" type="button" class="btn"
+                    data-toggle="tooltip" title="Analysis of providers">Rating mistakes</button>
+            <button id="flipNext7" type="button" class="btn"
+                    data-toggle="tooltip" title="Weather for the next days">Next 7 days</button>
         </p>
     </div>
 
@@ -136,6 +146,28 @@
         </c:forEach>
     </div>
 
+    <div id="providers">
+        <c:forEach items="${listAverages}" var="avDiff">
+            <img src="${contextPath}/resources/images/${avDiff.provider.logo}"
+                data-toggle="tooltip" title="${avDiff.provider}">
+        </c:forEach>
+    </div>
+
+    <div id="footer" class="alert alert-warning">
+        <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+        <h4>This is a demo version of application for testing weather providers.<br />
+            <br />
+            Some weather providers with free API was selected for getting forecasts and comparing forecasts data with actual weather for each date.<br />
+            <br />
+            In this app you can determine best weather provider and make analysis weather of last and next 7 days.
+            Also you can see rating of providers by average mistakes for each of them on a current moment.
+            Any date on each page can be opened for detailed analysis.<br />
+            <br />
+            For update weather data you can click update links on top main page.<br />
+            <br />
+            Have a sunny day! :)</h4>
+    </div>
+
 </div>
 </body>
 </html>
@@ -143,18 +175,24 @@
 <script>
     $(document).ready(function(){
         $("#flipLast7").click(function(){
+            closeProvidersAndText();
+
             $("#ratings").slideUp("slow");
             $("#forecasts").slideUp("slow");
 
             $("#chart7Days").slideToggle("slow");
         });
         $("#flipRating").click(function(){
+            closeProvidersAndText();
+
             $("#chart7Days").slideUp("slow");
             $("#forecasts").slideUp("slow");
 
             $("#ratings").slideToggle("slow");
         });
         $("#flipNext7").click(function(){
+            closeProvidersAndText();
+
             $("#chart7Days").slideUp("slow");
             $("#ratings").slideUp("slow");
 
@@ -168,6 +206,11 @@
             });
         </c:forEach>
     });
+
+    function closeProvidersAndText() {
+        $("#footer").slideUp();
+        $("#providers").slideUp();
+    }
 
     function openModalWithUpdate(name, data) {
         $('#loader').hide();
@@ -490,7 +533,7 @@
 
     * {box-sizing: border-box}
 
-    #actions {
+    #actions, #providers {
         text-align:center;
     }
 
