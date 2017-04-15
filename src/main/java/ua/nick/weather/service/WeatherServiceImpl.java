@@ -1,7 +1,6 @@
 package ua.nick.weather.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import ua.nick.weather.exception.ForecastNotFoundInDBException;
 import ua.nick.weather.exception.NoDataFromProviderException;
@@ -329,18 +328,6 @@ public class WeatherServiceImpl implements WeatherService {
         return testerAverage;
     }
 
-    private List<Forecast> addOtherTodayActualsToList(List<Forecast> actuals) {
-
-        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
-
-        List<Forecast> allActuals = forecastRepository.findByDateAndActual(today, true);
-        for (Forecast forecast : allActuals)
-            if (!actuals.contains(forecast))
-                actuals.add(forecast);
-
-        return actuals;
-    }
-
     private List<Forecast> getForecastsByProviderForPeriod(Provider provider, LocalDate from, LocalDate to) {
         List<Forecast> forecasts = new ArrayList<>();
 
@@ -372,23 +359,6 @@ public class WeatherServiceImpl implements WeatherService {
 
         for (int i = 1; i < end; i++)
             localDates.add(from.plusDays(i));
-
-        localDates.stream().sorted();
-
-        return localDates;
-    }
-
-    private List<LocalDate> createListDatesOfCurrentWeek() {
-        List<LocalDate> localDates = new ArrayList<>();
-
-        LocalDate today = LocalDate.now();
-        int dayOfWeek = today.getDayOfWeek().getValue();
-
-        for (int i = dayOfWeek-1; i >= 0; i--)
-            localDates.add(today.minusDays(i));
-
-        for (int i = dayOfWeek; i < 7; i++)
-            localDates.add(today.plusDays(i));
 
         localDates.stream().sorted();
 
@@ -479,34 +449,6 @@ public class WeatherServiceImpl implements WeatherService {
                 map.put("forecast", forecast);
         }
         return mapByProviders;
-    }
-
-    private Forecast getForecastByDateProviderActual(String date, Provider provider)
-            throws ForecastNotFoundInDBException {
-
-        Forecast forecast = forecastRepository.findByDateAndProviderAndActual(date, provider, false);
-
-        if (forecast == null)
-            throw new ForecastNotFoundInDBException("There is no forecast with date " + date + " in DB. " +
-                    "Please update forecast for this date before analysis.");
-
-        return forecast;
-    }
-
-    private Forecast getActualByDateProviderActual(String date, Provider provider)
-            throws ForecastNotFoundInDBException {
-        Forecast forecast;
-
-        List<Forecast> actuals = forecastRepository.findByDateAndProviderAndActual(
-                date, provider, true, new PageRequest(0, 1));
-
-        if (actuals == null || actuals.size() == 0)
-            throw new ForecastNotFoundInDBException("There is no actual weather with date " + date + " in DB. " +
-                            "Please update actual weather before analysis.");
-        else
-            forecast = actuals.get(0);
-
-        return forecast;
     }
 
 
@@ -635,6 +577,63 @@ public class WeatherServiceImpl implements WeatherService {
         saveNewDiff(diff);
 
         return diff;
+    }
+
+    private Forecast getForecastByDateProviderActual(String date, Provider provider)
+            throws ForecastNotFoundInDBException {
+
+        Forecast forecast = forecastRepository.findByDateAndProviderAndActual(date, provider, false);
+
+        if (forecast == null)
+            throw new ForecastNotFoundInDBException("There is no forecast with date " + date + " in DB. " +
+                    "Please update forecast for this date before analysis.");
+
+        return forecast;
+    }
+
+    private Forecast getActualByDateProviderActual(String date, Provider provider)
+            throws ForecastNotFoundInDBException {
+        Forecast forecast;
+
+        List<Forecast> actuals = forecastRepository.findByDateAndProviderAndActual(
+                date, provider, true, new PageRequest(0, 1));
+
+        if (actuals == null || actuals.size() == 0)
+            throw new ForecastNotFoundInDBException("There is no actual weather with date " + date + " in DB. " +
+                            "Please update actual weather before analysis.");
+        else
+            forecast = actuals.get(0);
+
+        return forecast;
+    }
+
+    private List<Forecast> addOtherTodayActualsToList(List<Forecast> actuals) {
+
+        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
+
+        List<Forecast> allActuals = forecastRepository.findByDateAndActual(today, true);
+        for (Forecast forecast : allActuals)
+            if (!actuals.contains(forecast))
+                actuals.add(forecast);
+
+        return actuals;
+    }
+
+    private List<LocalDate> createListDatesOfCurrentWeek() {
+        List<LocalDate> localDates = new ArrayList<>();
+
+        LocalDate today = LocalDate.now();
+        int dayOfWeek = today.getDayOfWeek().getValue();
+
+        for (int i = dayOfWeek-1; i >= 0; i--)
+            localDates.add(today.minusDays(i));
+
+        for (int i = dayOfWeek; i < 7; i++)
+            localDates.add(today.plusDays(i));
+
+        localDates.stream().sorted();
+
+        return localDates;
     }*/
 
     //test
