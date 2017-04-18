@@ -95,7 +95,7 @@ public class ParseUtils {
         actual.setDate(date);
         actual.setTempMin((int) Math.round(wunderground.getCurrentObservation().getTempC()));
         actual.setTempMax((int) Math.round(wunderground.getCurrentObservation().getTempC()));
-        actual.setPressure(Integer.parseInt(wunderground.getCurrentObservation().getPressureMb()));
+        actual.setPressure((int) Math.round(Double.parseDouble(wunderground.getCurrentObservation().getPressureMb())));
         actual.setClouds(Integer.parseInt(wunderground.getCurrentObservation().getRelativeHumidity().split("%")[0]));
         actual.setWindSpeed((int) Math.round(wunderground.getCurrentObservation().getWindMph() * 0.44704));
         actual.setDescription(wunderground.getCurrentObservation().getWeather());

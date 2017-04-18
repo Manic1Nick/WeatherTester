@@ -302,12 +302,13 @@ public class WeatherServiceImpl implements WeatherService {
     public List<String> createListStringDatesOfPeriod(LocalDate from, LocalDate to) {
         List<String> dates = new ArrayList<>();
 
-        int end = to.getDayOfYear() - from.getDayOfYear() + 1;
+        LocalDate current = from;
         DateTimeFormatter yyyyMMdd = DateTimeFormatter.ofPattern("yyyy/MM/dd");
 
-        for (int i = 0; i < end; i++)
-            dates.add(from.plusDays(i).format(yyyyMMdd));
-
+        while (current.isBefore(to.plusDays(1))) {
+            dates.add(current.format(yyyyMMdd));
+            current = current.plusDays(1);
+        }
         return dates;
     }
 
