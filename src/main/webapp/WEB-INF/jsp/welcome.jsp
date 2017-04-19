@@ -517,6 +517,7 @@
         background-image: url("${contextPath}/resources/images/Sky_Background-56.jpg");
         background-repeat:no-repeat;
         background-size:cover;
+        background-position:center top;
     }
 
     a {
