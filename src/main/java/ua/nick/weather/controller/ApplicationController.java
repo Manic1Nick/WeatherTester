@@ -10,13 +10,12 @@ import ua.nick.weather.model.*;
 import ua.nick.weather.modelTester.TesterAverage;
 import ua.nick.weather.modelTester.TesterItem;
 import ua.nick.weather.service.WeatherService;
+import ua.nick.weather.utils.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -30,15 +29,15 @@ public class ApplicationController {
     public String welcome(@ModelAttribute("message") String message, Model model) {
 
         LocalDate today = LocalDate.now();
-        List<Diff> diffs = weatherService.createListDiffsForPeriod(today.minusDays(7), today);
-        model.addAttribute("listDiffs", diffs);
+        model.addAttribute("listDiffs",
+                weatherService.createListDiffsForPeriod(today.minusDays(7), today));
+        model.addAttribute("datesPrev",
+                weatherService.createListStringDatesOfPeriod(today.minusDays(7), today));
 
-        Map<Provider, List<Forecast>> mapForecasts =
-                weatherService.createMapProviderForecastsForPeriod(today.plusDays(1), today.plusDays(7));
-        model.addAttribute("mapForecasts", mapForecasts);
-
-        List<String> dates = weatherService.createListStringDatesOfPeriod(today.plusDays(1), today.plusDays(7));
-        model.addAttribute("dates", dates);
+        model.addAttribute("mapForecasts",
+                weatherService.createMapProviderForecastsForPeriod(today.plusDays(1), today.plusDays(7)));
+        model.addAttribute("datesNext",
+                weatherService.createListStringDatesOfPeriod(today.plusDays(1), today.plusDays(7)));
 
         List<AverageDiff> averages = weatherService.getAllAverageDiffs();
         averages.sort((diff1, diff2) -> (int) diff1.getValue() - (int) diff2.getValue());
@@ -60,7 +59,7 @@ public class ApplicationController {
                 if (list.size() > 0)
                     countingByProvider.put(list.get(0).getProvider(), (long) list.size());
 
-            message = createMessageAboutUpdateForecasts(countingByProvider);
+            message = StringUtils.createMessageAboutUpdateForecasts(countingByProvider);
 
         } catch (Exception e) {
             message = e.getMessage();
@@ -77,7 +76,7 @@ public class ApplicationController {
             Map<Provider, Long> countingByProvider = actuals.stream().collect(
                     Collectors.groupingBy(Forecast::getProvider, Collectors.counting()));
 
-            message = createMessageAboutUpdateForecasts(countingByProvider);
+            message = StringUtils.createMessageAboutUpdateForecasts(countingByProvider);
 
         } catch (Exception e) {
             message = e.getMessage();
@@ -89,19 +88,11 @@ public class ApplicationController {
     public void findForecastIdsByDay(HttpServletRequest req, HttpServletResponse resp, Model model)
             throws IOException {
 
-        String date = req.getParameter("date");
-        if (date == null)
-            date = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
-
-        if (req.getParameter("index") != null)
-            date = createPreviousOrNextDate(date, req.getParameter("index"));
+        String date = StringUtils.getDateFromParameter(req.getParameter("date"), req.getParameter("index"));
         model.addAttribute("date", date);
 
         try {
-            List<List<Long>> listIds = weatherService.getListForecastsAndActualsIds(date);
-            String ids = "";
-            for (List<Long> list : listIds)
-                ids += list.get(0) + "," + list.get(1) + ";";
+            String ids = weatherService.getListSeparatedIds(date).stream().collect(Collectors.joining(";"));
             resp.getWriter().print(ids);
 
         } catch (Exception e) {
@@ -132,7 +123,7 @@ public class ApplicationController {
 
         List<AverageDiff> allAverageDiff = weatherService.updateAverageDiffForAllDays();
 
-        resp.getWriter().print(createMessageAboutUpdateAverageDiff(allAverageDiff));
+        resp.getWriter().print(StringUtils.createMessageAboutUpdateAverageDiff(allAverageDiff));
     }
 
     //todo usable or delete
@@ -168,56 +159,5 @@ public class ApplicationController {
         model.addAttribute("message", message);
 
         return "total_analysis";
-    }
-
-
-    private String createPreviousOrNextDate(String date, String indexText) {
-
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy/MM/dd");
-        LocalDate localDate = LocalDate.parse(date, formatter);
-
-        int index = Integer.valueOf(indexText);
-        LocalDate changedDate = index > 0 ? localDate.plusDays(1) : localDate.minusDays(1);
-
-        return formatter.format(changedDate);
-    }
-
-    private String createMessageAboutUpdateForecasts(Map<Provider, Long> map) {
-
-        String message;
-        if (map.keySet().size() > 0) {
-            String countedByProviders = "";
-            int total = 0;
-            for (Provider provider : map.keySet()) {
-                countedByProviders += "</br>" + map.get(provider) + " from " + provider + ";";
-                total += map.get(provider);
-            }
-            message = "New " + total + " forecast(s) were added to database:" + countedByProviders;
-
-        } else {
-            message = "There is no need to update forecasts from providers for this date. " +
-                    "</br>Try tomorrow";
-        }
-        return message;
-    }
-
-    private String createMessageAboutUpdateAverageDiff(List<AverageDiff> list) {
-        Map<Provider, Integer> mapCounts = new HashMap<>();//providers updated -> days updated
-        for (AverageDiff averageDiff : list)
-            if (list.size() > 0)
-                mapCounts.put(averageDiff.getProvider(), averageDiff.getDays());
-
-        String message = "";
-        int size = mapCounts.keySet().size();
-        if (size > 0) {
-            String countedByProviders = "";
-            for (Provider provider : mapCounts.keySet())
-                countedByProviders += "</br>" + mapCounts.get(provider) + " from " + provider + ";";
-
-            message = "New " + size + " average differences were updated:" + countedByProviders;
-        } else {
-            message = "There is no need to update average differences for any providers.";
-        }
-        return message;
     }
 }

@@ -5,13 +5,14 @@
 
 <%--previous 7 days--%>
 <c:set var="listDiffs" value="${listDiffs}"/>
+<c:set var="datesPrev" value="${datesPrev}"/>
 
 <%--rating mistakes--%>
 <c:set var="listAverages" value="${listAverages}"/>
 
 <%--next 7 days--%>
 <c:set var="mapForecasts" value="${mapForecasts}"/>
-<c:set var="dates" value="${dates}"/>
+<c:set var="datesNext" value="${datesNext}"/>
 
 <c:set var="message" value="${message}"/>
 
@@ -329,8 +330,8 @@
         },
         "scale-x":{
             "labels":[
-                <c:forEach items="${listDiffs}" var="diff" varStatus="status">
-                    "${diff.date}"<c:if test="${!status.last}">,</c:if>
+                <c:forEach items="${datesPrev}" var="date" varStatus="status">
+                    "${date}"<c:if test="${!status.last}">,</c:if>
                 </c:forEach>
             ],
             "line-color":"none",
@@ -378,8 +379,8 @@
                     </c:forEach>
                 ],
                 "dates": [
-                    <c:forEach items="${listDiffs}" var="diff" varStatus="status">
-                        "${diff.date}"<c:if test="${!status.last}">,</c:if>
+                    <c:forEach items="${datesPrev}" var="date" varStatus="status">
+                        "${date}"<c:if test="${!status.last}">,</c:if>
                     </c:forEach>
                 ]
             }
@@ -480,7 +481,7 @@
                 fontColor: "#000000"
             },
             labels : [
-                <c:forEach items="${dates}" var="date" varStatus="status">
+                <c:forEach items="${datesNext}" var="date" varStatus="status">
                     "${date}"<c:if test="${!status.last}">,</c:if>
                 </c:forEach>
             ]

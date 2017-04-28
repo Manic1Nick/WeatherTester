@@ -23,6 +23,7 @@ import java.text.ParseException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service(value = "service")
 public class WeatherServiceImpl implements WeatherService {
@@ -53,79 +54,18 @@ public class WeatherServiceImpl implements WeatherService {
             throws IOException, URISyntaxException, ParseException, NoDataFromProviderException {
         List<List<Forecast>> allForecasts = new ArrayList<>();
 
-        for (Provider provider : Provider.values()) {
+        for (Provider provider : Provider.values())
+            if (needUpdateForecasts(provider))
+                allForecasts.add(createListForecastsFromProvider(provider));
 
-            if (needUpdateForecasts(provider)) {
-                try {
-                    List<Forecast> list = getNewForecastsFromProvider(provider);
-
-                    if (provider != Provider.FORECA)
-                        list = saveListNewForecasts(list);
-
-                    allForecasts.add(list);
-
-                } catch (Exception e) {
-                    throw new NoDataFromProviderException("There is no data from provider " + provider.name());
-                }
-            }
-        }
         return allForecasts;
     }
 
-    private List<Forecast> saveListNewForecasts(List<Forecast> list) throws NoDataFromProviderException {
-
-        list = validateNewForecasts(list);
-        if (list.size() > 0)
-            for (Forecast forecast : list)
-                saveNewForecast(forecast);
-
-        return list;
-    }
-
     @Override
-    public List<Forecast> getNewForecastsFromProvider(Provider provider)
-            throws URISyntaxException, IOException, ParseException, NoDataFromProviderException {
-
-        URI uri = new URI(provider.getLinkForecast());
-        URL url = uri.toURL();
-
-        String json;
-        try {
-            json = NetUtils.urlToString(url);
-        } catch (Exception e) {
-            throw new NoDataFromProviderException("Error getting data from provider " + provider.name()
-                    + ". Try connect later");
-        }
-
-        //foreca has 1 json for all forecasts and actual (and has limit )
-        if (provider == Provider.FORECA)
-            return createListForecastsAndActualFromForeca(json);
-
-        return forecastFactory.createListForecastModelsFromJson(provider, json);
-    }
-
-    private List<Forecast> createListForecastsAndActualFromForeca(String json)
-            throws ParseException, NoDataFromProviderException {
-
-        List<Forecast> list = forecastFactory.createListForecastModelsFromJson(Provider.FORECA, json);
-        list = saveListNewForecasts(list);
-
-        if (needUpdateActuals(Provider.FORECA)) {
-            Forecast actual = actualFactory.createActualModelFromJson(Provider.FORECA, json);;
-            saveNewForecast(actual);
-            createAndSaveNewDiff(actual);
-        }
-
-        return list;
-    }
-
-    @Override
-    public List<Forecast> getAllNewActuals()
-            throws IOException, URISyntaxException, ParseException {
+    public List<Forecast> getAllNewActuals() throws IOException, URISyntaxException, ParseException {
         List<Forecast> actuals = new ArrayList<>();
 
         for (Provider provider : Provider.values()) {
-
             if (needUpdateActuals(provider)) {
                 Forecast actual = getActualWeatherFromProvider(provider);
 
@@ -135,8 +75,6 @@ public class WeatherServiceImpl implements WeatherService {
                 createAndSaveNewDiff(actual);
             }
         }
-        //actuals = addOtherTodayActualsToList(actuals);
-
         return actuals;
     }
 
@@ -158,18 +96,18 @@ public class WeatherServiceImpl implements WeatherService {
     }
 
     @Override
-    public List<List<Long>> getListForecastsAndActualsIds(String date)
-            throws ForecastNotFoundInDBException {
-        List<List<Long>> list = new ArrayList<>();
+    public List<String> getListSeparatedIds(String date) throws ForecastNotFoundInDBException {
+        //create text line of ids pairs "forecast,actual" ("1,2;3,4;...)
+        List<String> list = new ArrayList<>();
 
         String exceptionMessage = "There are no %s from " + date + " in DB. " +
                 "Please update database for this date before analysis.";
 
-        List<Forecast> allForecastsByDay = forecastRepository.findByDate(date);
-        if (allForecastsByDay == null || allForecastsByDay.size() == 0)
+        List<Forecast> allDateForecasts = forecastRepository.findByDate(date);
+        if (allDateForecasts == null || allDateForecasts.size() == 0)
             throw new ForecastNotFoundInDBException(String.format(exceptionMessage, "any forecasts or actuals"));
 
-        Map<Provider, Map<String, Forecast>> mapByProviders = distributeForecatsByProviders(allForecastsByDay);
+        Map<Provider, Map<String, Forecast>> mapByProviders = sortForecatsByProviders(allDateForecasts);
         for (Map<String, Forecast> map : mapByProviders.values()) {
             Forecast forecast = map.get("forecast");
             Forecast actual = map.get("actual");
@@ -178,7 +116,7 @@ public class WeatherServiceImpl implements WeatherService {
             else if (actual == null)
                 throw new ForecastNotFoundInDBException(String.format(exceptionMessage, "actual weather"));
             else
-                list.add(Arrays.asList(forecast.getId(), actual.getId()));
+                list.add(forecast.getId() + "," + actual.getId());
         }
         return list;
     }
@@ -204,7 +142,7 @@ public class WeatherServiceImpl implements WeatherService {
 
         setZeroForAllAverageDiff(); // ATTENTION !!!
 
-        for (Provider provider : Arrays.asList(Provider.values())) {
+        for (Provider provider : Provider.values()) {
             List<Diff> listDiffs = diffRepository.findByProvider(provider);
 
             if (listDiffs != null && listDiffs.size() > 0)
@@ -216,19 +154,13 @@ public class WeatherServiceImpl implements WeatherService {
 
     @Override
     public List<TesterAverage> createListAverageTesters(String date) {
+
         List<TesterAverage> averageTesters = new ArrayList<>();
 
-        for (Provider provider : Arrays.asList(Provider.values())) {
-            TesterAverage testerAverage = createTesterAverage(date, provider);
+        for (Provider provider : Provider.values())
+            averageTesters.add(createTesterAverage(date, provider));
 
-            if (testerAverage != null)
-                averageTesters.add(testerAverage);
-        }
-        averageTesters.sort((avTester1, avTester2) ->
-                (int) (Math.round(Double.parseDouble(avTester1.getValueDay())) -
-                        Math.round(Double.parseDouble(avTester2.getValueDay()))));
-
-        return averageTesters;
+        return averageTesters.stream().filter(tester -> tester != null).collect(Collectors.toList());
     }
 
     @Override
@@ -240,9 +172,9 @@ public class WeatherServiceImpl implements WeatherService {
             Long idForecast = Long.parseLong(pair.split(",")[0]);
             Long idActual = Long.parseLong(pair.split(",")[1]);
             Provider provider = forecastRepository.findById(idForecast).getProvider();
+
             mapItemTesters.put(provider, createDayListItemTestersByIds(idForecast, idActual));
         }
-
         return mapItemTesters;
     }
 
@@ -290,7 +222,7 @@ public class WeatherServiceImpl implements WeatherService {
 
     @Override
     public Map<Provider, List<Forecast>> createMapProviderForecastsForPeriod(LocalDate from, LocalDate to) {
-        Map<Provider, List<Forecast>> mapForecasts =new HashMap<>();
+        Map<Provider, List<Forecast>> mapForecasts = new HashMap<>();
 
         for (Provider provider : Provider.values())
             mapForecasts.put(provider, getForecastsByProviderForPeriod(provider, from, to));
@@ -312,6 +244,67 @@ public class WeatherServiceImpl implements WeatherService {
         return dates;
     }
 
+    private List<Forecast> getNewForecastsFromProvider(Provider provider)
+            throws URISyntaxException, IOException, ParseException, NoDataFromProviderException {
+
+        URI uri = new URI(provider.getLinkForecast());
+        URL url = uri.toURL();
+
+        String json;
+        try {
+            json = NetUtils.urlToString(url);
+        } catch (Exception e) {
+            throw new NoDataFromProviderException("Error getting data from provider " + provider.name()
+                    + ". Try connect later");
+        }
+
+        //foreca has 1 json for all forecasts and actual (and has limit )
+        if (provider == Provider.FORECA)
+            return createListForecastsAndActualFromForeca(json);
+
+        return forecastFactory.createListForecastModelsFromJson(provider, json);
+    }
+
+    private List<Forecast> createListForecastsAndActualFromForeca(String json)
+            throws ParseException, NoDataFromProviderException {
+
+        List<Forecast> list = forecastFactory.createListForecastModelsFromJson(Provider.FORECA, json);
+        list = saveListNewForecasts(list);
+
+        if (needUpdateActuals(Provider.FORECA)) {
+            Forecast actual = actualFactory.createActualModelFromJson(Provider.FORECA, json);;
+            saveNewForecast(actual);
+            createAndSaveNewDiff(actual);
+        }
+
+        return list;
+    }
+
+    private List<Forecast> createListForecastsFromProvider(Provider provider) throws NoDataFromProviderException {
+        List<Forecast> list;
+
+        try {
+            list = getNewForecastsFromProvider(provider);
+
+            if (provider != Provider.FORECA)
+                list = saveListNewForecasts(list);
+
+        } catch (Exception e) {
+            throw new NoDataFromProviderException("There is no data from provider " + provider.name());
+        }
+        return list;
+    }
+
+    private List<Forecast> saveListNewForecasts(List<Forecast> list) throws NoDataFromProviderException {
+
+        list = validateNewForecasts(list);
+        if (list.size() > 0)
+            for (Forecast forecast : list)
+                saveNewForecast(forecast);
+
+        return list;
+    }
+
 
     private TesterAverage createTesterAverage(String date, Provider provider) {
         TesterAverage testerAverage = null;
@@ -322,26 +315,24 @@ public class WeatherServiceImpl implements WeatherService {
             AverageDiff averageDiff = averageDiffRepository.findByProvider(provider);
 
             testerAverage = new TesterAverage(
-                    provider, date, String.valueOf(diff.getAverageDayDiff()),
-                    String.valueOf(averageDiff.getValue()), String.valueOf(averageDiff.getDays()));
+                    provider,
+                    date,
+                    String.valueOf(diff.getAverageDayDiff()),
+                    String.valueOf(averageDiff.getValue()),
+                    String.valueOf(averageDiff.getDays())
+            );
         }
 
         return testerAverage;
     }
 
     private List<Forecast> getForecastsByProviderForPeriod(Provider provider, LocalDate from, LocalDate to) {
-        List<Forecast> forecasts = new ArrayList<>();
 
-        List<String> datesOfPeriod = createListStringDatesOfPeriod(from, to);
-
-        for (String date : datesOfPeriod) {
-            Forecast current = forecastRepository.findByDateAndProviderAndActual(date, provider, false);
-            if (current != null)
-                forecasts.add(current);
-        }
-        forecasts.sort((forecast1, forecast2) -> forecast1.getId().intValue() - forecast2.getId().intValue());
-
-        return forecasts;
+        return createListStringDatesOfPeriod(from, to).stream()
+                .map(date -> forecastRepository.findByDateAndProviderAndActual(date, provider, false))
+                .filter(forecast -> forecast != null)
+                .sorted((forecast1, forecast2) -> forecast1.getId().intValue() - forecast2.getId().intValue())
+                .collect(Collectors.toList());
     }
 
     private Diff findBestDiffForDate(LocalDate localDate) {
@@ -424,15 +415,17 @@ public class WeatherServiceImpl implements WeatherService {
     private void setZeroForAllAverageDiff() {
         List<AverageDiff> listAll = averageDiffRepository.findAll();
 
-        for (AverageDiff diff : listAll) {
-            diff.setValue(0.0);
-            diff.setDays(0);
+        if (listAll != null && listAll.size() > 0) {
+            for (AverageDiff diff : listAll) {
+                diff.setValue(0.0);
+                diff.setDays(0);
 
-            averageDiffRepository.save(diff);
+                averageDiffRepository.save(diff);
+            }
         }
     }
 
-    private Map<Provider, Map<String, Forecast>> distributeForecatsByProviders(List<Forecast> list) {
+    private Map<Provider, Map<String, Forecast>> sortForecatsByProviders(List<Forecast> list) {
         Map<Provider, Map<String, Forecast>> mapByProviders = new HashMap<>();
         Map<String, Forecast> map;
 
@@ -455,15 +448,15 @@ public class WeatherServiceImpl implements WeatherService {
 
     //clear list forecast for better save
     private List<Forecast> validateNewForecasts(List<Forecast> list) {
-        List<Forecast> listNewForcasts = new ArrayList<>();
+        List<Forecast> listNewForecasts = new ArrayList<>();
 
         for (Forecast forecast : list)
             if (!forecast.isActual() && !checkForecastInDB(forecast))
-                listNewForcasts.add(forecast);
+                listNewForecasts.add(forecast);
             else if (forecast.isActual() && !checkActualInDB(forecast))
-                listNewForcasts.add(forecast);
+                listNewForecasts.add(forecast);
 
-        return listNewForcasts;
+        return listNewForecasts;
     }
 
     private boolean checkForecastInDB(Forecast forecast) {

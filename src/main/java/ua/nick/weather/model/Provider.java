@@ -11,7 +11,8 @@ public enum Provider {
             "small_openweathermap_logo.png",
             "row_openweathermap_logo.png",
             "#ebea2f",
-            7),
+            7
+    ),
 
     WUNDERGROUND(
             "http://api.wunderground.com/api/8a173cdd18d0cabe/forecast/q/UA/Kiev.json",
@@ -19,7 +20,8 @@ public enum Provider {
             "small_wu_logo.png",
             "row_wu_logo.png",
             "#9d9ad1",
-            4),
+            4
+    ),
 
     FORECA(
             "http://apitest.foreca.net/?lon=30.5234&lat=50.4501&key=IT7YtSoC0tgh3Chl0PHaZmb7g&format=json",
@@ -27,7 +29,8 @@ public enum Provider {
             "small_foreca_logo.png",
             "row_foreca_logo.png",
             "#29bfe4",
-            10),
+            10
+    ),
 
     DARK_SKY(
             "https://api.darksky.net/forecast/030645a49019b80fcc061e3505f1b905/50.4450968,30.5053821",
@@ -35,7 +38,8 @@ public enum Provider {
             "small_darksky_logo.png",
             "row_darksky_logo.png",
             "#29e45c",
-            8);
+            8
+    );
 
     //APIXU();
 

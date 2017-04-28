@@ -18,11 +18,11 @@ public interface WeatherService {
     void saveNewForecast(Forecast forecast);
     Forecast getForecastById(Long id);
     List<List<Forecast>> getAllNewForecasts() throws IOException, URISyntaxException, ParseException, NoDataFromProviderException;
-    List<Forecast> getNewForecastsFromProvider(Provider provider) throws URISyntaxException, IOException, ParseException, NoDataFromProviderException;
+    //List<Forecast> getNewForecastsFromProvider(Provider provider) throws URISyntaxException, IOException, ParseException, NoDataFromProviderException;
     List<Forecast> getAllNewActuals() throws IOException, URISyntaxException, ParseException;
     Forecast getActualWeatherFromProvider(Provider provider) throws URISyntaxException, IOException, ParseException;
     List<Forecast> getAllForecastsFromProvider(Provider provider);
-    List<List<Long>> getListForecastsAndActualsIds(String date) throws ForecastNotFoundInDBException;
+    List<String> getListSeparatedIds(String date) throws ForecastNotFoundInDBException;
 
     void saveNewDiff(Diff diff);
     AverageDiff getAverageDiff(Provider provider);
