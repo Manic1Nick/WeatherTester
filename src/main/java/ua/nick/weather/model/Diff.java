@@ -1,6 +1,7 @@
 package ua.nick.weather.model;
 
 import javax.persistence.*;
+import java.util.Arrays;
 import java.util.Map;
 
 @Entity
@@ -172,22 +173,11 @@ public class Diff {
 
     private Double determineDescriptionDiff(String forecastDescription, String actualDescription) {
 
-        if (forecastDescription.equals(actualDescription))
-            return (double) 0;
+        String[] arrayForecast = forecastDescription.toLowerCase().split(" ");
 
-        String[] arrayForecast = forecastDescription.split(" ");
-        String[] arrayActual = actualDescription.split(" ");
-        if (arrayActual.length > 0)
-            for (String part : arrayActual) {
-                if (forecastDescription.contains(part))
-                    return (double) 50;
-            }
-        else if (arrayForecast.length > 0)
-            for (String part : arrayForecast) {
-                if (actualDescription.contains(part))
-                    return (double) 50;
-            }
-
-        return (double) 100;
+        return (1 - ((double) (Arrays.stream(arrayForecast)
+                .filter(word -> word.length() > 3 && actualDescription.toLowerCase().contains(word))
+                .count())
+                / arrayForecast.length)) * 100;
     }
 }

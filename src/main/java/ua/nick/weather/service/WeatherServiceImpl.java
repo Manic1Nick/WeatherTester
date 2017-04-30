@@ -155,12 +155,11 @@ public class WeatherServiceImpl implements WeatherService {
     @Override
     public List<TesterAverage> createListAverageTesters(String date) {
 
-        List<TesterAverage> averageTesters = new ArrayList<>();
-
-        for (Provider provider : Provider.values())
-            averageTesters.add(createTesterAverage(date, provider));
-
-        return averageTesters.stream().filter(tester -> tester != null).collect(Collectors.toList());
+        return Arrays.asList(Provider.values()).stream()
+                .map(p -> createTesterAverage(date, p))
+                .filter(tester -> tester != null)
+                .sorted((t1, t2) -> (int) Double.parseDouble(t1.getValueDay()) - (int) Double.parseDouble(t2.getValueDay()))
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -232,16 +231,10 @@ public class WeatherServiceImpl implements WeatherService {
 
     @Override
     public List<String> createListStringDatesOfPeriod(LocalDate from, LocalDate to) {
-        List<String> dates = new ArrayList<>();
 
-        LocalDate current = from;
-        DateTimeFormatter yyyyMMdd = DateTimeFormatter.ofPattern("yyyy/MM/dd");
-
-        while (current.isBefore(to.plusDays(1))) {
-            dates.add(current.format(yyyyMMdd));
-            current = current.plusDays(1);
-        }
-        return dates;
+        return createListDatesOfPeriod(from, to).stream()
+                .map(DateTimeFormatter.ofPattern("yyyy/MM/dd")::format)
+                .collect(Collectors.toList());
     }
 
     private List<Forecast> getNewForecastsFromProvider(Provider provider)
@@ -276,7 +269,6 @@ public class WeatherServiceImpl implements WeatherService {
             saveNewForecast(actual);
             createAndSaveNewDiff(actual);
         }
-
         return list;
     }
 
@@ -493,142 +485,6 @@ public class WeatherServiceImpl implements WeatherService {
 
         return forecastRepository.findByDateAndProviderAndActual(today, provider, true) == null;
     }
-
-    /*@Override
-    public Map<Provider, List<Forecast>> createMapForecastsByProviders(boolean actual) {
-        Map<Provider, List<Forecast>> map = new HashMap<>();
-
-        for (Provider provider : Arrays.asList(Provider.values())) {
-            List<Forecast> list = getAllForecastsFromProviderAndActual(provider, actual);
-            if (list != null) {
-                list.sort((o1, o2) -> Long.compare(o1.getTimeUnix(), o2.getTimeUnix()));
-                map.put(provider, list);
-            }
-        }
-        return map;
-    }
-
-    @Override
-    public Map<Provider, Map<String, Map<Tester, String>>> createDayMapForecastsByProviders(
-            String separatedByCommaIds) {
-
-        Map<Provider, Map<String, Map<Tester, String>>> mapProviders = new HashMap<>();
-        //provider -> {item -> {tester -> value}}
-
-        String[] pairs = separatedByCommaIds.split(";");
-        for (String pair : pairs) {
-            Long id = Long.parseLong(pair.split(",")[0]);
-            Provider provider = forecastRepository.findById(id).getProvider();
-            mapProviders.put(provider, createDayMapForecastsByIds(pair));
-        }
-        return mapProviders;
-    }
-
-    @Override
-    public Diff getDiffByDateAndProvider(String date, Provider provider) {
-        return diffRepository.findByDateAndProvider(date, provider);
-    }
-
-    @Override
-    public void saveNewAverageDiff(AverageDiff diff) {
-        averageDiffRepository.save(diff);
-    }
-
-    @Override
-    public List<Forecast> getAllForecastsFromProviderAndActual(Provider provider, boolean actual) {
-        return forecastRepository.findByProviderAndActual(provider, actual);
-    }
-
-    @Override
-    public Map<String, Map<Tester, String>> createDayMapForecastsByIds(String separatedByCommaIds) {
-        Map<String, Map<Tester, String>> mapItems = new HashMap<>(); //item -> {tester -> value}
-
-        String[] ids = separatedByCommaIds.split(",");
-
-        Forecast forecast = forecastRepository.findById(Long.parseLong(ids[0]));
-        Forecast actual = forecastRepository.findById(Long.parseLong(ids[1]));
-
-        Diff diff = diffRepository.findByDateAndProvider(forecast.getDate(), forecast.getProvider());
-        if (diff == null)
-            diff = createAndSaveNewDiff(forecast, actual);
-
-        for (String item : Constants.FIELDS_AND_RANGES_MAP.keySet()) {
-            SortedMap<Tester, String> mapForecasts = new TreeMap<>();
-            item = item.toLowerCase();
-
-            mapForecasts.put(Tester.FORECAST, forecast.determineFieldByString(item));
-            mapForecasts.put(Tester.ACTUAL, actual.determineFieldByString(item));
-            mapForecasts.put(Tester.DIFFERENT, diff.determineFieldByString(item));
-
-            mapItems.put(item, mapForecasts);
-        }
-        return mapItems;
-    }
-
-    @Override
-    public Diff createAndSaveNewDiff(Forecast forecast, Forecast actual) {
-        Diff diff = new Diff(forecast, actual);
-        saveNewDiff(diff);
-
-        return diff;
-    }
-
-    private Forecast getForecastByDateProviderActual(String date, Provider provider)
-            throws ForecastNotFoundInDBException {
-
-        Forecast forecast = forecastRepository.findByDateAndProviderAndActual(date, provider, false);
-
-        if (forecast == null)
-            throw new ForecastNotFoundInDBException("There is no forecast with date " + date + " in DB. " +
-                    "Please update forecast for this date before analysis.");
-
-        return forecast;
-    }
-
-    private Forecast getActualByDateProviderActual(String date, Provider provider)
-            throws ForecastNotFoundInDBException {
-        Forecast forecast;
-
-        List<Forecast> actuals = forecastRepository.findByDateAndProviderAndActual(
-                date, provider, true, new PageRequest(0, 1));
-
-        if (actuals == null || actuals.size() == 0)
-            throw new ForecastNotFoundInDBException("There is no actual weather with date " + date + " in DB. " +
-                            "Please update actual weather before analysis.");
-        else
-            forecast = actuals.get(0);
-
-        return forecast;
-    }
-
-    private List<Forecast> addOtherTodayActualsToList(List<Forecast> actuals) {
-
-        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
-
-        List<Forecast> allActuals = forecastRepository.findByDateAndActual(today, true);
-        for (Forecast forecast : allActuals)
-            if (!actuals.contains(forecast))
-                actuals.add(forecast);
-
-        return actuals;
-    }
-
-    private List<LocalDate> createListDatesOfCurrentWeek() {
-        List<LocalDate> localDates = new ArrayList<>();
-
-        LocalDate today = LocalDate.now();
-        int dayOfWeek = today.getDayOfWeek().getValue();
-
-        for (int i = dayOfWeek-1; i >= 0; i--)
-            localDates.add(today.minusDays(i));
-
-        for (int i = dayOfWeek; i < 7; i++)
-            localDates.add(today.plusDays(i));
-
-        localDates.stream().sorted();
-
-        return localDates;
-    }*/
 
     //test
     public static void main(String[] args) {
