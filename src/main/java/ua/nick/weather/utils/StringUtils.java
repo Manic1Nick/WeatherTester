@@ -59,7 +59,7 @@ public class StringUtils {
             if (list.size() > 0)
                 mapCounts.put(averageDiff.getProvider(), averageDiff.getDays());
 
-        String message = "";
+        String message;
         int size = mapCounts.keySet().size();
         if (size > 0) {
             String countedByProviders = "";

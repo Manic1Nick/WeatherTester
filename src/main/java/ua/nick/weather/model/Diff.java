@@ -2,7 +2,9 @@ package ua.nick.weather.model;
 
 import javax.persistence.*;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Entity
 @Table(name = "diffs")
@@ -57,7 +59,8 @@ public class Diff {
         diff = actual.getWindSpeed() - forecast.getWindSpeed();
         this.windSpeedDiff = Math.round(diff * 100 / mapDiffs.get("WindSpeed"));
 
-        this.descriptionDiff = determineDescriptionDiff(forecast.getDescription(), actual.getDescription());
+        this.descriptionDiff = (double) (Math.round(
+                determineDescriptionDiff(forecast.getDescription(), actual.getDescription()) * 10)) / 10;
 
         diff = Math.abs(tempDiff) * mapShares.get("Temp") +
                 Math.abs(pressureDiff) * mapShares.get("Pressure") +
@@ -171,13 +174,25 @@ public class Diff {
         return value;
     }
 
-    private Double determineDescriptionDiff(String forecastDescription, String actualDescription) {
+    private static Double determineDescriptionDiff(String forecastDescription, String actualDescription) {
 
-        String[] arrayForecast = forecastDescription.toLowerCase().split(" ");
+        String splittedString;
+        String baseString;
 
-        return (1 - ((double) (Arrays.stream(arrayForecast)
-                .filter(word -> word.length() > 3 && actualDescription.toLowerCase().contains(word))
-                .count())
-                / arrayForecast.length)) * 100;
+        if (forecastDescription.split(" ").length > actualDescription.split(" ").length ) {
+            splittedString = forecastDescription;
+            baseString = actualDescription;
+        } else {
+            splittedString = actualDescription;
+            baseString = forecastDescription;
+        }
+
+        List<String> keyWords = Arrays.asList(splittedString.toLowerCase().split(" ")).stream()
+                .filter(word -> word.length() > 3).collect(Collectors.toList());
+
+        return (double) keyWords.stream()
+                .filter(word -> !baseString.toLowerCase().contains(word))
+                .count()
+                / keyWords.size() * 100;
     }
 }

@@ -26,7 +26,7 @@ public interface WeatherService {
     void saveNewDiff(Diff diff);
     AverageDiff getAverageDiff(Provider provider);
     List<AverageDiff> getAllAverageDiffs();
-    List<Integer> createListOfAverageItems();
+    //List<Integer> createListOfAverageItems();
     List<TesterAverage> createListAverageTesters(String date);
     Map<Provider, List<TesterItem>> createMapItemTesters(String ids);
     List<Diff> createListDiffsForPeriod(LocalDate from, LocalDate to);

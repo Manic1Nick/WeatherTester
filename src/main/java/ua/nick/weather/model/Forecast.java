@@ -178,4 +178,11 @@ public class Forecast {
 
         return value;
     }
+
+    public String forecastOrActual() {
+        if (this.isActual())
+            return "actual";
+        else
+            return "forecast";
+    }
 }

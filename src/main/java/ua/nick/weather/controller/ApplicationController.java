@@ -73,8 +73,8 @@ public class ApplicationController {
         String message;
         try {
             List<Forecast> actuals = weatherService.getAllNewActuals();
-            Map<Provider, Long> countingByProvider = actuals.stream().collect(
-                    Collectors.groupingBy(Forecast::getProvider, Collectors.counting()));
+            Map<Provider, Long> countingByProvider = actuals.stream()
+                    .collect(Collectors.groupingBy(Forecast::getProvider, Collectors.counting()));
 
             message = StringUtils.createMessageAboutUpdateForecasts(countingByProvider);
 
@@ -92,7 +92,8 @@ public class ApplicationController {
         model.addAttribute("date", date);
 
         try {
-            String ids = weatherService.getListSeparatedIds(date).stream().collect(Collectors.joining(";"));
+            String ids = weatherService.getListSeparatedIds(date).stream()
+                    .collect(Collectors.joining(";"));
             resp.getWriter().print(ids);
 
         } catch (Exception e) {
@@ -127,7 +128,7 @@ public class ApplicationController {
     }
 
     //todo usable or delete
-    @RequestMapping(value = {"/forecasts/get/all"}, method = RequestMethod.GET)
+    /*@RequestMapping(value = {"/forecasts/get/all"}, method = RequestMethod.GET)
     public String getTotalAnalysis(@ModelAttribute("message") String message, Model model) {
 
         List<Provider> providers = new ArrayList<>();
@@ -159,5 +160,5 @@ public class ApplicationController {
         model.addAttribute("message", message);
 
         return "total_analysis";
-    }
+    }*/
 }
