@@ -35,9 +35,9 @@ public class ApplicationController {
                 weatherService.createListStringDatesOfPeriod(today.minusDays(7), today));
 
         model.addAttribute("mapForecasts",
-                weatherService.createMapProviderForecastsForPeriod(today.plusDays(1), today.plusDays(7)));
+                weatherService.createMapProviderForecastsForPeriod(today, today.plusDays(7)));
         model.addAttribute("datesNext",
-                weatherService.createListStringDatesOfPeriod(today.plusDays(1), today.plusDays(7)));
+                weatherService.createListStringDatesOfPeriod(today, today.plusDays(7)));
 
         List<AverageDiff> averages = weatherService.getAllAverageDiffs();
         averages.sort((diff1, diff2) -> (int) diff1.getValue() - (int) diff2.getValue());
