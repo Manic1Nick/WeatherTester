@@ -14,14 +14,13 @@ public class NetUtils {
              OutputStream os = new FileOutputStream(dest)) {
 
             byte[] buff = new byte[8000];
-            int count = 0;
+            int count;
 
             System.out.println(is.toString());
 
             while((count = is.read(buff)) != -1){
                 os.write(buff, 0, count);
                 os.flush();
-
             }
         }
     }
@@ -32,10 +31,10 @@ public class NetUtils {
 
         BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(is));
         StringBuilder sb = new StringBuilder();
-        String line = "";
-        while((line = bufferedReader.readLine()) != null) {
+        String line;
+        while((line = bufferedReader.readLine()) != null)
             sb.append(line);
-        }
+
         return sb.toString();
     }
 

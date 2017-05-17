@@ -88,7 +88,7 @@ public class ApplicationController {
     public void findForecastIdsByDay(HttpServletRequest req, HttpServletResponse resp, Model model)
             throws IOException {
 
-        String date = StringUtils.getDateFromParameter(req.getParameter("date"), req.getParameter("index"));
+        String date = StringUtils.changeDateByIndex(req.getParameter("date"), req.getParameter("index"));
         model.addAttribute("date", date);
 
         try {

@@ -12,7 +12,6 @@ import ua.nick.weather.modelWeather.wunderground.wForecast.Forecastday_;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -213,14 +212,4 @@ public class ParseUtils {
                 precipitationRate.get(String.valueOf(code.charAt(2))) + " " +
                 precipitation.get(String.valueOf(code.charAt(3)));
     }
-
-
-    public static void main(String[] args) throws ParseException {
-
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-        Date date = new SimpleDateFormat("yyyy-MM-dd").parse("2017-04-02");
-        long epoch = new SimpleDateFormat("yyyy-MM-dd").parse("2017-04-02").getTime();
-        System.out.println(epoch);
-    }
-
 }

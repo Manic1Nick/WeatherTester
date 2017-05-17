@@ -1,10 +1,6 @@
 package ua.nick.weather.model;
 
 import javax.persistence.*;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @Entity
 @Table(name = "diffs")
@@ -22,9 +18,6 @@ public class Diff {
     private double averageDayDiff;
     private boolean inclInAverageDiff;
 
-    private Map<String, Integer> mapDiffs = Constants.FIELDS_AND_RANGES_MAP;
-    private Map<String, Double> mapShares = Constants.FIELDS_AND_SHARES_MAP;
-
     public Diff() {
     }
 
@@ -41,33 +34,17 @@ public class Diff {
         this.provider = provider;
     }
 
-    public Diff(Forecast forecast, Forecast actual) {
-        this.date = forecast.getDate();
-        this.provider = forecast.getProvider();
-
-        double diff = ((actual.getTempMin() + actual.getTempMax()) -
-                (forecast.getTempMin() + forecast.getTempMax())) / 2;
-        this.tempDiff = Math.round(diff * 100 / mapDiffs.get("Temp"));
-
-        diff = forecast.getPressure() != 0 ?
-                actual.getPressure() / forecast.getPressure() : 1000;
-        this.pressureDiff = Math.round(diff);
-
-        diff = actual.getClouds() - forecast.getClouds();
-        this.cloudsDiff = Math.round(diff);
-
-        diff = actual.getWindSpeed() - forecast.getWindSpeed();
-        this.windSpeedDiff = Math.round(diff * 100 / mapDiffs.get("WindSpeed"));
-
-        this.descriptionDiff = (double) (Math.round(
-                determineDescriptionDiff(forecast.getDescription(), actual.getDescription()) * 10)) / 10;
-
-        diff = Math.abs(tempDiff) * mapShares.get("Temp") +
-                Math.abs(pressureDiff) * mapShares.get("Pressure") +
-                Math.abs(cloudsDiff) * mapShares.get("Clouds") +
-                Math.abs(windSpeedDiff) * mapShares.get("WindSpeed") +
-                Math.abs(descriptionDiff) * mapShares.get("Description");
-        this.averageDayDiff = Math.round(diff);
+    public Diff(String date, Provider provider,
+                double tempDiff, double pressureDiff, double cloudsDiff,
+                double windSpeedDiff, double descriptionDiff, double averageDayDiff) {
+        this.date = date;
+        this.provider = provider;
+        this.tempDiff = tempDiff;
+        this.pressureDiff = pressureDiff;
+        this.cloudsDiff = cloudsDiff;
+        this.windSpeedDiff = windSpeedDiff;
+        this.descriptionDiff = descriptionDiff;
+        this.averageDayDiff = averageDayDiff;
     }
 
     @Id
@@ -172,27 +149,5 @@ public class Diff {
             value = String.valueOf(averageDayDiff) + " %";
 
         return value;
-    }
-
-    private static Double determineDescriptionDiff(String forecastDescription, String actualDescription) {
-
-        String splittedString;
-        String baseString;
-
-        if (forecastDescription.split(" ").length > actualDescription.split(" ").length ) {
-            splittedString = forecastDescription;
-            baseString = actualDescription;
-        } else {
-            splittedString = actualDescription;
-            baseString = forecastDescription;
-        }
-
-        List<String> keyWords = Arrays.asList(splittedString.toLowerCase().split(" ")).stream()
-                .filter(word -> word.length() > 3).collect(Collectors.toList());
-
-        return (double) keyWords.stream()
-                .filter(word -> !baseString.toLowerCase().contains(word))
-                .count()
-                / keyWords.size() * 100;
     }
 }

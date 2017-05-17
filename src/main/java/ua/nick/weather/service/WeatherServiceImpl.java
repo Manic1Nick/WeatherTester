@@ -12,6 +12,7 @@ import ua.nick.weather.repository.DiffRepository;
 import ua.nick.weather.repository.ForecastRepository;
 import ua.nick.weather.utils.NetUtils;
 import ua.nick.weather.weatherFactory.ActualWeatherFactory;
+import ua.nick.weather.weatherFactory.DiffsFactory;
 import ua.nick.weather.weatherFactory.ForecastFactory;
 
 import java.io.IOException;
@@ -39,6 +40,8 @@ public class WeatherServiceImpl implements WeatherService {
     private ForecastFactory forecastFactory;
     @Autowired
     private ActualWeatherFactory actualFactory;
+    @Autowired
+    private DiffsFactory diffsFactory;
 
     @Override
     public void saveNewForecast(Forecast forecast) {
@@ -93,11 +96,6 @@ public class WeatherServiceImpl implements WeatherService {
     }
 
     @Override
-    public List<Forecast> getAllForecastsFromProvider(Provider provider) {
-        return forecastRepository.findByProvider(provider);
-    }
-
-    @Override
     public List<String> getListSeparatedIds(String date)
             throws ForecastNotFoundInDBException {
         //create text line of ids pairs "forecast,actual" ("1,2;3,4;...)
@@ -114,8 +112,10 @@ public class WeatherServiceImpl implements WeatherService {
                 .collect(Collectors.groupingBy(Forecast::getProvider));
 
         for (List<Forecast> list : mapByProviders.values())
-            listIds.add(createPairIds(exceptionMessage, list.stream()
-                    .collect(Collectors.groupingBy(Forecast::forecastOrActual))));
+            listIds.add(
+                    createPairIds(exceptionMessage,
+                            list.stream().collect(Collectors.groupingBy(Forecast::forecastOrActual)))
+            );
 
         return listIds;
     }
@@ -123,11 +123,6 @@ public class WeatherServiceImpl implements WeatherService {
     @Override
     public void saveNewDiff(Diff diff) {
         diffRepository.save(diff);
-    }
-
-    @Override
-    public AverageDiff getAverageDiff(Provider provider) {
-        return averageDiffRepository.findByProvider(provider);
     }
 
     @Override
@@ -374,18 +369,20 @@ public class WeatherServiceImpl implements WeatherService {
         if (forecast == null)
                 return null;
 
-        return new Diff(forecast, actual);
+        return diffsFactory.createNewDiff(forecast, actual);
     }
 
     private AverageDiff createAverageDiff(Diff diff) {
         AverageDiff averageDiff = averageDiffRepository.findByProvider(diff.getProvider());
 
         if (averageDiff == null)
-            averageDiff = new AverageDiff(diff);
+            averageDiff = new AverageDiff(diff.getProvider(), 1,
+                    diff.getTempDiff(), diff.getPressureDiff(), diff.getCloudsDiff(),
+                    diff.getWindSpeedDiff(), diff.getDescriptionDiff(), diff.getAverageDayDiff());
         else
-            averageDiff = averageDiff.addDiff(diff);
+            averageDiff = diffsFactory.addDiffToAverageDiff(averageDiff, diff);
 
-        return averageDiffRepository.save(averageDiff);
+        return saveAverageDiff(averageDiff);
     }
 
     private void setZeroForAllAverageDiff() {
@@ -396,9 +393,13 @@ public class WeatherServiceImpl implements WeatherService {
                 diff.setValue(0.0);
                 diff.setDays(0);
 
-                averageDiffRepository.save(diff);
+                saveAverageDiff(diff);
             }
         }
+    }
+
+    private AverageDiff saveAverageDiff(AverageDiff avDiff) {
+        return averageDiffRepository.save(avDiff);
     }
 
     //clear list forecast for better save

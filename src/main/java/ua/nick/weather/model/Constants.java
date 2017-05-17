@@ -11,7 +11,6 @@ public final class Constants {
         //put("ACCUWEATHER", "8aeadwqcjbfQSpGRN0mU4aBAI3d50OGC");
         put("WUNDERGROUND", "8a173cdd18d0cabe");
         put("FORECA", "IT7YtSoC0tgh3Chl0PHaZmb7g");
-        /*put("APIXU", "03863e31405349848b9102935170104");*/
     }};
 
     public static final Map<String, Integer> FIELDS_AND_RANGES_MAP = new HashMap<String, Integer>()
