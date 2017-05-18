@@ -29,41 +29,41 @@ public class StringUtils {
     }
 
     public static String createMessageAboutUpdateForecasts(Map<Provider, Long> map) {
-        String message;
 
-        if (map.keySet().size() > 0) {
-            String countedByProviders = "";
-            int total = 0;
-            for (Provider provider : map.keySet()) {
-                countedByProviders += String.format("</br>%s from %s;", map.get(provider), provider);
-                total += map.get(provider);
-            }
-            message = String.format("New %s forecast(s) were added to database:%s", total, countedByProviders);
+        if (map != null && map.keySet().size() > 0) {
+            Long total = map.values().stream()
+                    .filter(count -> count != null)
+                    .reduce((n1, n2) -> n1 + n2).orElse(0L);
 
-        } else {
-            message = "There is no need to update forecasts from providers for this date. " +
-                    "</br>Try tomorrow";
+            String countedByProviders = map.keySet().stream()
+                    .map(provider -> "</br>" + map.get(provider) + " from " + provider)
+                    .collect(Collectors.joining());
+
+            if (total > 0)
+                return String.format("New %s forecast(s) were added to database:%s", total, countedByProviders);
         }
-        return message;
+
+        return "There is no need to update forecasts from providers for this date. " +
+                "</br>Try tomorrow";
     }
 
     public static String createMessageAboutUpdateAverageDiff(List<AverageDiff> list) {
 
-        //providers updated -> days updated
-        Map<Provider, Integer> mapCounts = list.stream()
-                .collect(Collectors.toMap(AverageDiff::getProvider, AverageDiff::getDays));
+        if (list != null && list.size() > 0) {
+            //providers updated -> days updated
+            Map<Provider, Integer> mapCounts = list.stream()
+                    .filter(avDiff -> avDiff != null)
+                    .collect(Collectors.toMap(AverageDiff::getProvider, AverageDiff::getDays));
 
-        String message;
-        int size = mapCounts.keySet().size();
-        if (size > 0) {
-            String countedByProviders = "";
-            for (Provider provider : mapCounts.keySet())
-                countedByProviders += String.format("</br>%s from %s;", mapCounts.get(provider), provider);
+            int size = mapCounts.keySet().size();
+            if (size > 0) {
+                String countedByProviders = mapCounts.keySet().stream()
+                        .map(provider -> "</br>" + mapCounts.get(provider) + " from " + provider)
+                        .collect(Collectors.joining());
 
-            message = String.format("New %s average differences were updated:%s", size, countedByProviders);
-        } else {
-            message = "There is no need to update average differences for any providers.";
+                return String.format("New %s average differences were updated:%s", size, countedByProviders);
+            }
         }
-        return message;
+        return "There is no need to update average differences for any providers.";
     }
 }

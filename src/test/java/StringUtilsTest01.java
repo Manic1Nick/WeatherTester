@@ -12,20 +12,20 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @RunWith(value = Parameterized.class)
-public class StringUtilsTest {
+public class StringUtilsTest01 {
 
     private String date;
     private String index;
     private String expectedDate;
 
-    public StringUtilsTest(String date, String index, String expectedDate) {
+    public StringUtilsTest01(String date, String index, String expectedDate) {
         this.date = date;
         this.index = index;
         this.expectedDate = expectedDate;
     }
 
     @Parameterized.Parameters(name = "{index}: testChangeDateByIndex({0} add {1} days) = {2}")
-    public static Collection<Object[]> data() {
+    public static Collection<Object[]> data1() {
         DateTimeFormatter yyyyMMdd = DateTimeFormatter.ofPattern("yyyy/MM/dd");
         String today = LocalDateTime.now().format(yyyyMMdd);
 
