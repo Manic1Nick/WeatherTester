@@ -1,16 +1,8 @@
 package ua.nick.weather.weatherFactory;
 
-import com.google.gson.Gson;
 import org.springframework.stereotype.Component;
 import ua.nick.weather.model.Forecast;
 import ua.nick.weather.model.Provider;
-import ua.nick.weather.modelWeather.darkSky.DarkSky;
-import ua.nick.weather.modelWeather.darkSky.Datum_;
-import ua.nick.weather.modelWeather.foreca.Fcd;
-import ua.nick.weather.modelWeather.foreca.ForecaAll;
-import ua.nick.weather.modelWeather.openWeather.OpenWeatherForecast;
-import ua.nick.weather.modelWeather.wunderground.wForecast.Forecastday_;
-import ua.nick.weather.modelWeather.wunderground.wForecast.WundergroundForecast;
 import ua.nick.weather.utils.ParseUtils;
 
 import java.text.ParseException;
@@ -20,58 +12,27 @@ import java.util.List;
 @Component
 public class ForecastFactory {
 
-    private Gson gson;
     private ParseUtils parseUtils;
 
     public ForecastFactory() {
-        this.gson = new Gson();
         this.parseUtils = new ParseUtils();
     }
 
-    public List<Forecast> createListForecastModelsFromJson(Provider provider, String json)
-            throws ParseException {
+    public List<Forecast> createListForecastsFromJsonByProvider(Provider provider, String json) throws ParseException {
 
         List<Forecast> forecasts = new ArrayList<>();
 
-        if (provider == Provider.OPENWEATHER) {
-            OpenWeatherForecast openWeather = gson.fromJson(json, OpenWeatherForecast.class);
+        if (Provider.OPENWEATHER == provider) {
+            forecasts = parseUtils.parseForecastsFromOpenWeather(forecasts, json);
 
-            List<ua.nick.weather.modelWeather.openWeather.List> forecastsList = openWeather.getList();
-            for (ua.nick.weather.modelWeather.openWeather.List list : forecastsList) {
-                Forecast forecast = parseUtils.makeForecastFromOpenWeather(list);
-                forecast.setDaysBeforeActual(forecastsList.indexOf(list) + 1);
-                forecasts.add(forecast);
-            }
+        } else if (Provider.WUNDERGROUND == provider) {
+            forecasts = parseUtils.parseForecastsFromWunderground(forecasts, json);
 
-        } else if (provider == Provider.WUNDERGROUND) {
-            WundergroundForecast wundergroundForecast = gson.fromJson(json, WundergroundForecast.class);
+        } else if (Provider.FORECA == provider) {
+            forecasts = parseUtils.parseForecastsFromForeca(forecasts, json);
 
-            List<Forecastday_> forecastsList = wundergroundForecast.getForecast().getSimpleforecast().getForecastday();
-            for (Forecastday_ forecastday : forecastsList) {
-                Forecast forecast = parseUtils.makeForecastFromWunderground(forecastday);
-                forecast.setDaysBeforeActual(forecastsList.indexOf(forecastday) + 1);
-                forecasts.add(forecast);
-            }
-
-        } else if (provider == Provider.FORECA) {
-            ForecaAll forecaAll = gson.fromJson(json, ForecaAll.class);
-
-            List<Fcd> fcdList = forecaAll.getFcd();
-            for (Fcd fcd : fcdList) {
-                Forecast forecast = parseUtils.makeForecastFromForeca(fcd);
-                forecast.setDaysBeforeActual(fcdList.indexOf(fcd) + 1);
-                forecasts.add(forecast);
-            }
-
-        } else if (provider == Provider.DARK_SKY) {
-            DarkSky darkSky = gson.fromJson(json, DarkSky.class);
-
-            List<Datum_> datumList = darkSky.getDaily().getData();
-            for (Datum_ datum : datumList) {
-                Forecast forecast = parseUtils.makeForecastFromDarkSky(datum);
-                forecast.setDaysBeforeActual(datumList.indexOf(datum) + 1);
-                forecasts.add(forecast);
-            }
+        } else if (Provider.DARK_SKY == provider) {
+            forecasts = parseUtils.parseForecastsFromDarkSky(forecasts, json);
         }
 
         return forecasts;

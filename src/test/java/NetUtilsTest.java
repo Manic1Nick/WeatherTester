@@ -1,4 +1,3 @@
-import org.junit.BeforeClass;
 import org.junit.Test;
 import ua.nick.weather.utils.NetUtils;
 
@@ -10,11 +9,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 public class NetUtilsTest {
 
-    @BeforeClass
-    public static void setupBeforeTests() {
-
-    }
-
     @Test
     public void test_urlToString_success() {
         String json = null;
@@ -23,7 +17,7 @@ public class NetUtilsTest {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        assertThat(json, containsString(""));
+        assertThat(json, containsString(":"));
     }
 
     @Test(expected = IOException.class)

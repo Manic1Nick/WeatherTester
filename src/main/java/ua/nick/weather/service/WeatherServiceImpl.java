@@ -243,13 +243,13 @@ public class WeatherServiceImpl implements WeatherService {
         if (provider == Provider.FORECA)
             return createListForecastsAndActualFromForeca(json);
 
-        return forecastFactory.createListForecastModelsFromJson(provider, json);
+        return forecastFactory.createListForecastsFromJsonByProvider(provider, json);
     }
 
     private List<Forecast> createListForecastsAndActualFromForeca(String json)
             throws ParseException, NoDataFromProviderException {
 
-        List<Forecast> list = forecastFactory.createListForecastModelsFromJson(Provider.FORECA, json);
+        List<Forecast> list = forecastFactory.createListForecastsFromJsonByProvider(Provider.FORECA, json);
         list = saveListNewForecasts(list);
 
         if (needUpdateActuals(Provider.FORECA)) {

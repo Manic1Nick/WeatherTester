@@ -15,20 +15,22 @@ public class StringUtils {
     public static String changeDateByIndex(String date, String index) {
         DateTimeFormatter yyyyMMdd = DateTimeFormatter.ofPattern("yyyy/MM/dd");
 
-        if (date == null) {
+        if (date == null || index == null) {
             date = LocalDateTime.now().format(yyyyMMdd);
 
         } else {
             LocalDate localDate = LocalDate.parse(date, yyyyMMdd);
-            LocalDate changedDate = Integer.valueOf(index) > 0 ? localDate.plusDays(1) : localDate.minusDays(1);
+            LocalDate changedDate = Integer.valueOf(index) == 1 ? localDate.plusDays(1)
+                    : Integer.valueOf(index) == -1 ? localDate.minusDays(1)
+                    : localDate ;
             date = changedDate.format(yyyyMMdd);
         }
         return date;
     }
 
     public static String createMessageAboutUpdateForecasts(Map<Provider, Long> map) {
-
         String message;
+
         if (map.keySet().size() > 0) {
             String countedByProviders = "";
             int total = 0;
