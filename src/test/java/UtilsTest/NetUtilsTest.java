@@ -1,3 +1,5 @@
+package UtilsTest;
+
 import org.junit.Test;
 import ua.nick.weather.utils.NetUtils;
 

@@ -33,8 +33,8 @@ public enum Provider {
     ),
 
     DARK_SKY(
-            "http://api.apixu.com/v1/forecast.json?key=03863e31405349848b9102935170104&q=Kiev",
-            "http://api.apixu.com/v1/current.json?key=03863e31405349848b9102935170104&q=Kiev",
+            "https://api.darksky.net/forecast/030645a49019b80fcc061e3505f1b905/50.4450968,30.5053821",
+            "https://api.darksky.net/forecast/030645a49019b80fcc061e3505f1b905/50.4450968,30.5053821",
             "small_darksky_logo.png",
             "row_darksky_logo.png",
             "#29e45c",
@@ -42,8 +42,8 @@ public enum Provider {
     )/*,
 
     APIXU(
-            "https://api.darksky.net/forecast/030645a49019b80fcc061e3505f1b905/50.4450968,30.5053821",
-            "https://api.darksky.net/forecast/030645a49019b80fcc061e3505f1b905/50.4450968,30.5053821",
+            "http://api.apixu.com/v1/forecast.json?key=03863e31405349848b9102935170104&q=Kiev",
+            "http://api.apixu.com/v1/current.json?key=03863e31405349848b9102935170104&q=Kiev",
             "small_darksky_logo.png",
             "row_darksky_logo.png",
             "#e43e29",

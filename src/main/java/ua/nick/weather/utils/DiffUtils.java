@@ -22,36 +22,37 @@ public class DiffUtils {
         double tempDiff = ((tempMinForecast + tempMaxForecast) -
                 (tempMinActual + tempMaxActual)) / 2;
 
-        return Math.round(tempDiff * 100 / mapDiffs.get("Temp"));
+        return roundDouble(tempDiff * 100 / mapDiffs.get("Temp"));
     }
 
     public double calculatePressureDiff(int pressureForecast, int pressureActual) {
 
         double pressureDiff = pressureForecast != 0 ?
-               pressureActual / pressureForecast : 1000;
+                (pressureActual - pressureForecast) * 100 / pressureForecast
+                : (pressureActual - 1000) / 10;
 
-        return Math.round(pressureDiff);
+        return roundDouble(pressureDiff);
     }
 
     public double calculateCloudsDiff(int cloudsForecast, int cloudsActual) {
 
         double cloudsDiff = cloudsActual - cloudsForecast;
 
-        return Math.round(cloudsDiff);
+        return roundDouble(cloudsDiff);
     }
 
     public double calculateWindSpeedDiff(int windSpeedForecast, int windSpeedActual) {
 
         double windSpeedDiff = windSpeedActual - windSpeedForecast;
 
-        return Math.round(windSpeedDiff * 100 / mapDiffs.get("WindSpeed"));
+        return roundDouble(windSpeedDiff * 100 / mapDiffs.get("WindSpeed"));
     }
 
     public double calculateDescriptionDiff(String descriptionForecast, String descriptionActual) {
 
         double descriptionDiff = determineDescriptionDiff(descriptionForecast, descriptionActual);
 
-        return (double) (Math.round(descriptionDiff * 10)) / 10;
+        return roundDouble(descriptionDiff);
     }
 
     public double calculateAverageDayDiff(double tempDiff, double pressureDiff,
@@ -63,14 +64,14 @@ public class DiffUtils {
                 Math.abs(windSpeedDiff) * mapShares.get("WindSpeed") +
                 Math.abs(descriptionDiff) * mapShares.get("Description");
 
-        return Math.round(averageDayDiff);
+        return roundDouble(averageDayDiff);
     }
 
     public double calculateAverageValue(double value, double addingValue, int days) {
 
         double result = (days * value + Math.abs(addingValue)) / (days + 1);
 
-        return (double) (Math.round(result * 10)) / 10;
+        return roundDouble(result);
     }
 
     private Double determineDescriptionDiff(String forecastDescription, String actualDescription) {
@@ -82,5 +83,9 @@ public class DiffUtils {
                 .filter(word -> !forecastDescription.toLowerCase().contains(word))
                 .count()
                 / keyWords.size() * 100;
+    }
+
+    private double roundDouble(double n) {
+        return (double) (Math.round(n * 10)) / 10;
     }
 }
