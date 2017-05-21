@@ -82,9 +82,9 @@ public class DiffUtilsTest {
     public void test_calculateDescriptionDiff() {
         //String descriptionForecast, String descriptionActual
         data = Arrays.asList(new Object[][]{
-                {"half cloudy no precipitation rain", "broken no precipitation rain", 33.3},
+                {"half cloudy no precipitation rain", "broken no precipitation rain", 25.0},
                 {"half cloudy", "half cloudy", 0.0},
-                {"rain", "broken no precipitation rain", 66.7}
+                {"rain", "broken no precipitation rain", 0.0}
         });
 
         for (Object[] array : data)

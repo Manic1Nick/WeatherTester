@@ -76,16 +76,24 @@ public class DiffUtils {
 
     private Double determineDescriptionDiff(String forecastDescription, String actualDescription) {
 
-        List<String> keyWords = Arrays.asList(actualDescription.toLowerCase().split(" ")).stream()
-                .filter(word -> word.length() > 3).collect(Collectors.toList());
+        List<String> forecastWords = createListForecastWordsFromString(forecastDescription);
+        List<String> actualWords = createListForecastWordsFromString(actualDescription);
 
-        return (double) keyWords.stream()
-                .filter(word -> !forecastDescription.toLowerCase().contains(word))
-                .count()
-                / keyWords.size() * 100;
+        boolean forecastBiggerThanActual = forecastWords.size() > actualWords.size();
+        List<String> baseWords = forecastBiggerThanActual ? forecastWords : actualWords ;
+        List<String> keyWords = !forecastBiggerThanActual ? forecastWords : actualWords ;
+
+        int nonrepeatableWords = (int) keyWords.stream().filter(word -> !baseWords.contains(word)).count();
+
+        return (double) nonrepeatableWords / baseWords.size() * 100;
     }
 
     private double roundDouble(double n) {
         return (double) (Math.round(n * 10)) / 10;
+    }
+
+    private List<String> createListForecastWordsFromString(String forecast) {
+        return Arrays.asList(forecast.toLowerCase().split(" ")).stream()
+                .filter(word -> word.length() > 3).collect(Collectors.toList());
     }
 }
