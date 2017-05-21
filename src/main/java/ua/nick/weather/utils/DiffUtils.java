@@ -28,10 +28,10 @@ public class DiffUtils {
     public double calculatePressureDiff(int pressureForecast, int pressureActual) {
 
         double pressureDiff = pressureForecast != 0 ?
-                (pressureActual - pressureForecast) * 100 / pressureForecast
-                : (pressureActual - 1000) / 10;
+                pressureActual - pressureForecast
+                : pressureActual - 1000;
 
-        return roundDouble(pressureDiff);
+        return roundDouble(pressureDiff * 100 / mapDiffs.get("Pressure"));
     }
 
     public double calculateCloudsDiff(int cloudsForecast, int cloudsActual) {
@@ -73,7 +73,6 @@ public class DiffUtils {
 
         return roundDouble(result);
     }
-
     private Double determineDescriptionDiff(String forecastDescription, String actualDescription) {
 
         List<String> forecastWords = createListForecastWordsFromString(forecastDescription);

@@ -34,9 +34,9 @@ public class DiffUtilsTest {
     public void test_calculatePressureDiff() {
         //int pressureForecast, int pressureActual
         data = Arrays.asList(new Object[][]{
-                {1000, 1020, 2.0},
-                {1000, 980, -2.0},
-                {0, 1020, 2.0},
+                {1000, 1020, 20.0},
+                {1000, 980, -20.0},
+                {0, 1020, 20.0},
                 {0, 1000, 0.0}
         });
 
