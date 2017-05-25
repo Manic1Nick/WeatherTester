@@ -13,32 +13,15 @@ import java.util.stream.Collectors;
 
 public class ReadFilesUtils {
 
-    private String directoryName;
-
-    public ReadFilesUtils(String directoryName) {
-        this.directoryName = directoryName;
+    public ReadFilesUtils() {
     }
 
-    public List<String> listFiles() {
-
-        File directory = new File(directoryName);
-        File[] fList = directory.listFiles();
-        if (fList == null || fList.length == 0)
-            return new ArrayList<>();
-
-        //get all the files from a directory
-        return Arrays.stream(fList)
-                .filter(File::isFile)
-                .map(File::getName)
-                .collect(Collectors.toList());
-    }
-
-    public Map<Provider, Map<String, String>> readJsonFromFiles() {
+    public Map<Provider, Map<String, String>> readJsonFromFiles(String directoryName) {
         Map<Provider, Map<String, String>> mapJsonByProviders = new HashMap<>();
         
-        List<String> fileNames = listFiles();
+        List<String> fileNames = listFiles(directoryName);
         Map<Provider, Map<String, String>> mapFileUrlsByProviders =
-                createMapFileUrlsByProviders(fileNames);
+                createMapFileUrlsByProviders(directoryName, fileNames);
 
         for (Provider provider : mapFileUrlsByProviders.keySet()) {
             Map<String, String> fileUrls = mapFileUrlsByProviders.get(provider);
@@ -52,20 +35,36 @@ public class ReadFilesUtils {
         return mapJsonByProviders;
     }
 
-    private Map<Provider, Map<String, String>> createMapFileUrlsByProviders(List<String> fileNames) {
+    private List<String> listFiles(String directoryName) {
+
+        File directory = new File(directoryName);
+        File[] fList = directory.listFiles();
+        if (fList == null || fList.length == 0)
+            return new ArrayList<>();
+
+        //get all the files from a directory
+        return Arrays.stream(fList)
+                .filter(File::isFile)
+                .map(File::getName)
+                .collect(Collectors.toList());
+    }
+
+    private Map<Provider, Map<String, String>> createMapFileUrlsByProviders(
+                                    String directoryName, List<String> allFileNames) {
         Map<Provider, Map<String, String>> mapFileUrlsByProviders = new HashMap<>();
 
         for (Provider provider : Provider.values()) {
-            List<String> fileNamesProvider = fileNames.stream()
-                    .filter(name -> name.toUpperCase().contains(provider.toString()))
+            List<String> fileNames = allFileNames.stream()
+                    .filter(name -> name.toUpperCase().endsWith(provider.name()))
                     .collect(Collectors.toList());
 
-            mapFileUrlsByProviders.put(provider, createMapJsons(fileNamesProvider));
+            if (fileNames.size() > 0)
+                mapFileUrlsByProviders.put(provider, createMapJsons(directoryName, fileNames));
         }
         return mapFileUrlsByProviders;
     }
 
-    private Map<String, String> createMapJsons(List<String> fileNamesProvider) {
+    private Map<String, String> createMapJsons(String directoryName, List<String> fileNamesProvider) {
         Map<String, String> fileUrls = new HashMap<>();
 
         for (String name : fileNamesProvider) {
@@ -85,6 +84,7 @@ public class ReadFilesUtils {
         try {
             JSONParser parser = new JSONParser();
             File file = new File(filePath);
+
             Object obj = parser.parse(new FileReader(file.toString()));
             JSONObject jsonObject = (JSONObject) obj;
             json = jsonObject.toJSONString();
@@ -97,10 +97,9 @@ public class ReadFilesUtils {
     }
 
     public static void main(String[] args) {
-        String forecastExamplesDir = "/home/jessy/IdeaProjects/WeatherTester/src/test/filesForecastExamples/";
-        ReadFilesUtils readFileUtils = new ReadFilesUtils(forecastExamplesDir);
+        ReadFilesUtils readFileUtils = new ReadFilesUtils();
 
-        Map<Provider, Map<String, String>> map = readFileUtils.readJsonFromFiles();
+        Map<Provider, Map<String, String>> map = readFileUtils.readJsonFromFiles("/home/jessy/IdeaProjects/WeatherTester/src/test/filesForecastExamples/");
 
         System.out.println("TOTAL SIZE is : " + map.keySet().size());
 
