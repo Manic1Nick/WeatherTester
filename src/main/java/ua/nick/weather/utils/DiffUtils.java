@@ -73,6 +73,7 @@ public class DiffUtils {
 
         return roundDouble(result);
     }
+
     private Double determineDescriptionDiff(String forecastDescription, String actualDescription) {
 
         List<String> forecastWords = createListForecastWordsFromString(forecastDescription);

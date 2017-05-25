@@ -15,15 +15,18 @@ public class StringUtils {
     public static String changeDateByIndex(String date, String index) {
         DateTimeFormatter yyyyMMdd = DateTimeFormatter.ofPattern("yyyy/MM/dd");
 
-        if (date == null || index == null) {
+        if (date == null) {
             date = LocalDateTime.now().format(yyyyMMdd);
 
         } else {
             LocalDate localDate = LocalDate.parse(date, yyyyMMdd);
-            LocalDate changedDate = Integer.valueOf(index) == 1 ? localDate.plusDays(1)
-                    : Integer.valueOf(index) == -1 ? localDate.minusDays(1)
-                    : localDate ;
-            date = changedDate.format(yyyyMMdd);
+
+            if (index != null)
+                localDate = Integer.valueOf(index) == 1 ? localDate.plusDays(1)
+                        : Integer.valueOf(index) == -1 ? localDate.minusDays(1)
+                        : localDate;
+
+            date = localDate.format(yyyyMMdd);
         }
         return date;
     }
