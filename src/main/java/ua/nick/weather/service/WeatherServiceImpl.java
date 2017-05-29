@@ -318,12 +318,17 @@ public class WeatherServiceImpl implements WeatherService {
     }
 
     private Diff findBestDiffForDate(LocalDate localDate) {
+        Diff minDiff = null;
+
         String date = localDate.format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
-
         List<Diff> currentDateDiffs = diffRepository.findByDate(date);
-        currentDateDiffs.sort((diff1, diff2) -> (int) (diff1.getAverageDayDiff() - diff2.getAverageDayDiff()));
 
-        return currentDateDiffs.size() > 0 ? currentDateDiffs.get(0) : null;
+        if (currentDateDiffs != null && currentDateDiffs.size() > 0)
+            minDiff = currentDateDiffs.stream()
+                    .min(Comparator.comparingDouble(Diff::getAverageDayDiff))
+                    .get();
+
+        return minDiff;
     }
 
     private List<LocalDate> createListDatesOfPeriod(LocalDate from, LocalDate to) {
